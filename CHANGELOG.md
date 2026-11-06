@@ -7,7 +7,7 @@ All notable changes to this extension are documented in this file.
 ### Changed — renamed to Cloud AI
 - The extension, the repository and every identifier are now **Cloud AI** / `cloud-ai`. Settings moved from `mendes.*` to `cloud.*` (`cloud.tunnelUrl`, `cloud.token`, `cloud.toolsEnabled`, `cloud.healthPollSeconds`), commands from `mendes.*` to `cloud.*`, the Activity Bar view to `cloud.chatView`, backend environment variables from `MENDES_*` to `CLOUD_*`, and the memory directory from `~/.mendes/memory` to `~/.cloud/memory`. Existing users must re-enter the tunnel URL and token under the new setting names.
 - New vector icons: a cloud carrying a three-node neural graph. `media/icon.svg` is the full-colour logo (rendered to the PNG sizes the Marketplace requires) and `media/icon-mono.svg` the monochrome Activity Bar glyph; both share the same cloud geometry.
-- Repository moved to https://github.com/cloud-fronts-group/cloud-ai and made public. CI publishes to the Marketplace from a tagged release when a `VSCE_PAT` repository secret is configured.
+- Repository moved to https://github.com/cloud-fronts-group/cloud-ai and made public. `publish.yml` publishes to the Marketplace from a tagged release with Trusted Publishing (GitHub OIDC, `vsce publish --oidc`); no Personal Access Token is stored.
 - Historical attributions are intentionally untouched: the original author's copyright line in `LICENSE`, and the original Marketplace ID and repository path in the provenance notes below.
 
 ## [0.4.0] — 2026-11-06
