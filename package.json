@@ -1,8 +1,8 @@
 {
-  "name": "mendes-ai",
-  "displayName": "Mendes AI",
+  "name": "cloud-ai",
+  "displayName": "Cloud AI",
   "description": "AI/Data Science specialist Vibe Coding assistant — dedicated sidebar chat with 14 slash commands for EDA, ML, RAG, fine-tuning, agents and more. Streams large open-weight models (Qwen, Gemma) from Google Colab into VS Code.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "cloud-fronts-group",
   "license": "MIT",
   "engines": {
@@ -33,12 +33,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/cloud-fronts-group/mendes-ai.git"
+    "url": "https://github.com/cloud-fronts-group/cloud-ai.git"
   },
   "bugs": {
-    "url": "https://github.com/cloud-fronts-group/mendes-ai/issues"
+    "url": "https://github.com/cloud-fronts-group/cloud-ai/issues"
   },
-  "homepage": "https://github.com/cloud-fronts-group/mendes-ai#readme",
+  "homepage": "https://github.com/cloud-fronts-group/cloud-ai#readme",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -47,100 +47,100 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "mendesAI",
-          "title": "Mendes AI",
+          "id": "cloudAI",
+          "title": "Cloud AI",
           "icon": "media/icon-mono.svg"
         }
       ]
     },
     "views": {
-      "mendesAI": [
+      "cloudAI": [
         {
           "type": "webview",
-          "id": "mendes.chatView",
+          "id": "cloud.chatView",
           "name": "Chat",
           "icon": "media/icon-mono.svg",
-          "contextualTitle": "Mendes AI"
+          "contextualTitle": "Cloud AI"
         }
       ]
     },
     "commands": [
       {
-        "command": "mendes.explain",
-        "title": "Mendes: Explain Selection"
+        "command": "cloud.explain",
+        "title": "Cloud: Explain Selection"
       },
       {
-        "command": "mendes.refactor",
-        "title": "Mendes: Refactor Selection"
+        "command": "cloud.refactor",
+        "title": "Cloud: Refactor Selection"
       },
       {
-        "command": "mendes.generate",
-        "title": "Mendes: Generate at Cursor"
+        "command": "cloud.generate",
+        "title": "Cloud: Generate at Cursor"
       },
       {
-        "command": "mendes.chat",
-        "title": "Mendes: Open Chat in Editor"
+        "command": "cloud.chat",
+        "title": "Cloud: Open Chat in Editor"
       },
       {
-        "command": "mendes.focusChat",
-        "title": "Mendes: Focus Chat (Sidebar)"
+        "command": "cloud.focusChat",
+        "title": "Cloud: Focus Chat (Sidebar)"
       },
       {
-        "command": "mendes.healthCheck",
-        "title": "Mendes: Check Backend Health"
+        "command": "cloud.healthCheck",
+        "title": "Cloud: Check Backend Health"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "command": "mendes.explain",
+          "command": "cloud.explain",
           "when": "editorHasSelection",
-          "group": "mendes@1"
+          "group": "cloud@1"
         },
         {
-          "command": "mendes.refactor",
+          "command": "cloud.refactor",
           "when": "editorHasSelection",
-          "group": "mendes@2"
+          "group": "cloud@2"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "mendes.focusChat",
+        "command": "cloud.focusChat",
         "key": "ctrl+shift+m",
         "mac": "cmd+shift+m"
       },
       {
-        "command": "mendes.explain",
+        "command": "cloud.explain",
         "key": "ctrl+alt+e",
         "when": "editorHasSelection"
       },
       {
-        "command": "mendes.refactor",
+        "command": "cloud.refactor",
         "key": "ctrl+alt+r",
         "when": "editorHasSelection"
       }
     ],
     "configuration": {
-      "title": "Mendes AI",
+      "title": "Cloud AI",
       "properties": {
-        "mendes.tunnelUrl": {
+        "cloud.tunnelUrl": {
           "type": "string",
           "default": "",
           "description": "URL do tunnel Cloudflared do Colab (ex.: https://xxx.trycloudflare.com)"
         },
-        "mendes.token": {
+        "cloud.token": {
           "type": "string",
           "default": "",
-          "description": "Bearer token (MENDES_TOKEN). Use Settings Sync com cuidado.",
+          "description": "Bearer token (CLOUD_TOKEN). Use Settings Sync com cuidado.",
           "scope": "machine"
         },
-        "mendes.toolsEnabled": {
+        "cloud.toolsEnabled": {
           "type": "boolean",
           "default": false,
           "description": "Permite o modelo chamar tools (read_file/write_file/edit_file/bash/glob/grep)"
         },
-        "mendes.healthPollSeconds": {
+        "cloud.healthPollSeconds": {
           "type": "number",
           "default": 10,
           "description": "Intervalo de polling do /health pro status bar"

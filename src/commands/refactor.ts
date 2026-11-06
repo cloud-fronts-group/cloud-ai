@@ -7,12 +7,12 @@ export async function refactorSelection(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
-    vscode.window.showWarningMessage("Mendes: selecione código primeiro.");
+    vscode.window.showWarningMessage("Cloud: selecione código primeiro.");
     return;
   }
 
   const instruction = await vscode.window.showInputBox({
-    title: "Mendes Refactor",
+    title: "Cloud Refactor",
     prompt: "O que mudar?",
     placeHolder: "ex.: extrai função pura · renomeia x para userId · usa async/await",
     ignoreFocusOut: true,
@@ -36,7 +36,7 @@ export async function refactorSelection(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: "Mendes: refatorando…",
+      title: "Cloud: refatorando…",
       cancellable: true,
     },
     async (_p, token) => {
@@ -58,7 +58,7 @@ export async function refactorSelection(
         }
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
-        vscode.window.showErrorMessage(`Mendes refactor: ${(e as Error).message}`);
+        vscode.window.showErrorMessage(`Cloud refactor: ${(e as Error).message}`);
         return;
       }
     },
@@ -90,7 +90,7 @@ export async function refactorSelection(
       "vscode.diff",
       original.uri,
       proposed.uri,
-      "Mendes: refactor preview",
+      "Cloud: refactor preview",
     );
     return;
   }
@@ -99,7 +99,7 @@ export async function refactorSelection(
   edit.replace(editor.document.uri, editor.selection, cleaned);
   const applied = await vscode.workspace.applyEdit(edit);
   if (!applied) {
-    vscode.window.showErrorMessage("Mendes: applyEdit falhou.");
+    vscode.window.showErrorMessage("Cloud: applyEdit falhou.");
   }
 }
 

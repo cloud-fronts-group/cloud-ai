@@ -12,7 +12,7 @@ let statusBar: StatusBar | undefined;
 let output: vscode.OutputChannel | undefined;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-  output = vscode.window.createOutputChannel("Mendes AI");
+  output = vscode.window.createOutputChannel("Cloud AI");
   ctx.subscriptions.push(output);
 
   statusBar = new StatusBar();
@@ -30,32 +30,32 @@ export function activate(ctx: vscode.ExtensionContext): void {
       chatViewProvider,
       { webviewOptions: { retainContextWhenHidden: true } },
     ),
-    vscode.commands.registerCommand("mendes.explain", () =>
+    vscode.commands.registerCommand("cloud.explain", () =>
       explainSelection(output!),
     ),
-    vscode.commands.registerCommand("mendes.refactor", () =>
+    vscode.commands.registerCommand("cloud.refactor", () =>
       refactorSelection(output!),
     ),
-    vscode.commands.registerCommand("mendes.generate", () =>
+    vscode.commands.registerCommand("cloud.generate", () =>
       generateAtCursor(output!),
     ),
-    vscode.commands.registerCommand("mendes.chat", () =>
+    vscode.commands.registerCommand("cloud.chat", () =>
       ChatPanel.show(ctx.extensionUri, ctx.globalState),
     ),
-    vscode.commands.registerCommand("mendes.focusChat", () =>
-      vscode.commands.executeCommand("mendes.chatView.focus"),
+    vscode.commands.registerCommand("cloud.focusChat", () =>
+      vscode.commands.executeCommand("cloud.chatView.focus"),
     ),
-    vscode.commands.registerCommand("mendes.healthCheck", healthCheck),
+    vscode.commands.registerCommand("cloud.healthCheck", healthCheck),
   );
 
   // On first install, reveal the chat view automatically so the user can see
   // and use it right away — same UX as Copilot Chat / Claude Code.
   void revealChatOnFirstRun(ctx);
 
-  output.appendLine(`[mendes] activated · tunnelUrl=${getConfig().tunnelUrl || "(empty)"}`);
+  output.appendLine(`[cloud] activated · tunnelUrl=${getConfig().tunnelUrl || "(empty)"}`);
 }
 
-const FIRST_RUN_KEY = "mendes.firstRunCompleted.v1";
+const FIRST_RUN_KEY = "cloud.firstRunCompleted.v1";
 
 async function revealChatOnFirstRun(
   ctx: vscode.ExtensionContext,
@@ -64,7 +64,7 @@ async function revealChatOnFirstRun(
   await ctx.globalState.update(FIRST_RUN_KEY, true);
   // Give VS Code a moment to register the view, then focus it.
   setTimeout(() => {
-    void vscode.commands.executeCommand("mendes.chatView.focus");
+    void vscode.commands.executeCommand("cloud.chatView.focus");
   }, 400);
 }
 
@@ -79,10 +79,10 @@ async function healthCheck(): Promise<void> {
       (h.gpu.vram_used_mb / h.gpu.vram_total_mb) * 100,
     );
     vscode.window.showInformationMessage(
-      `Mendes ok · ${h.gpu.name} · VRAM ${vramPct}% · code=${h.models.code ?? "—"}`,
+      `Cloud ok · ${h.gpu.name} · VRAM ${vramPct}% · code=${h.models.code ?? "—"}`,
     );
   } catch (e) {
-    vscode.window.showErrorMessage(`Mendes offline: ${(e as Error).message}`);
+    vscode.window.showErrorMessage(`Cloud offline: ${(e as Error).message}`);
   }
 }
 

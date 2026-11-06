@@ -1,4 +1,4 @@
-import { MendesConfig, assertConfigured } from "./config";
+import { CloudConfig, assertConfigured } from "./config";
 
 export interface RouteEvent {
   role: "code" | "vision" | "agentic";
@@ -29,7 +29,7 @@ export type StreamEvent =
   | { event: "error"; data: string }
   | { event: "done"; data: string };
 
-function explainNetworkError(err: unknown, cfg: MendesConfig): Error {
+function explainNetworkError(err: unknown, cfg: CloudConfig): Error {
   const msg = err instanceof Error ? err.message : String(err);
   const host = (() => {
     try {
@@ -46,11 +46,11 @@ function explainNetworkError(err: unknown, cfg: MendesConfig): Error {
   return new Error(
     `Backend offline (${host}). Tunnel Cloudflared do Colab caiu ou expirou. ` +
       `Re-rode a célula do cloudflared no Colab, copie a nova URL, e cole em ` +
-      `Settings → Mendes AI → Tunnel Url. [cause: ${msg}]`,
+      `Settings → Cloud AI → Tunnel Url. [cause: ${msg}]`,
   );
 }
 
-export async function fetchHealth(cfg: MendesConfig): Promise<HealthResponse> {
+export async function fetchHealth(cfg: CloudConfig): Promise<HealthResponse> {
   if (!cfg.tunnelUrl) throw new Error("tunnelUrl vazio");
   let r: Response;
   try {
@@ -72,7 +72,7 @@ export interface AskParams {
 }
 
 export async function* streamAsk(
-  cfg: MendesConfig,
+  cfg: CloudConfig,
   params: AskParams,
 ): AsyncGenerator<StreamEvent> {
   assertConfigured(cfg);
@@ -120,7 +120,7 @@ export interface ChatParams {
 }
 
 export async function* streamChat(
-  cfg: MendesConfig,
+  cfg: CloudConfig,
   params: ChatParams,
 ): AsyncGenerator<StreamEvent> {
   assertConfigured(cfg);

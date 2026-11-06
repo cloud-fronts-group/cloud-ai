@@ -19,8 +19,8 @@ export class ChatPanel {
       return;
     }
     const panel = vscode.window.createWebviewPanel(
-      "mendesChat",
-      "Mendes AI",
+      "cloudChat",
+      "Cloud AI",
       col,
       {
         enableScripts: true,

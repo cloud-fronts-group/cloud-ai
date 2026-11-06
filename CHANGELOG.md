@@ -2,13 +2,21 @@
 
 All notable changes to this extension are documented in this file.
 
+## [0.5.0] — 2026-11-06
+
+### Changed — renamed to Cloud AI
+- The extension, the repository and every identifier are now **Cloud AI** / `cloud-ai`. Settings moved from `mendes.*` to `cloud.*` (`cloud.tunnelUrl`, `cloud.token`, `cloud.toolsEnabled`, `cloud.healthPollSeconds`), commands from `mendes.*` to `cloud.*`, the Activity Bar view to `cloud.chatView`, backend environment variables from `MENDES_*` to `CLOUD_*`, and the memory directory from `~/.mendes/memory` to `~/.cloud/memory`. Existing users must re-enter the tunnel URL and token under the new setting names.
+- New vector icons: a cloud carrying a three-node neural graph. `media/icon.svg` is the full-colour logo (rendered to the PNG sizes the Marketplace requires) and `media/icon-mono.svg` the monochrome Activity Bar glyph; both share the same cloud geometry.
+- Repository moved to https://github.com/cloud-fronts-group/cloud-ai and made public. CI publishes to the Marketplace from a tagged release when a `VSCE_PAT` repository secret is configured.
+- Historical attributions are intentionally untouched: the original author's copyright line in `LICENSE`, and the original Marketplace ID and repository path in the provenance notes below.
+
 ## [0.4.0] — 2026-11-06
 
-Recovery release, now maintained at [cloud-fronts-group/mendes-ai](https://github.com/cloud-fronts-group/mendes-ai). The original repository (`mendesalex89/AI_Assistant`) disappeared from GitHub while the Marketplace listing still pointed at it. The complete TypeScript source of 0.3.2 was recovered from the `dist/extension.js.map` source map shipped inside the published VSIX; everything below was rebuilt around it.
+Recovery release, now maintained at [cloud-fronts-group/cloud-ai](https://github.com/cloud-fronts-group/cloud-ai). The original repository (`mendesalex89/AI_Assistant`) disappeared from GitHub while the Marketplace listing still pointed at it. The complete TypeScript source of 0.3.2 was recovered from the `dist/extension.js.map` source map shipped inside the published VSIX; everything below was rebuilt around it.
 
 ### Added
 - `backend/server.py` — reference FastAPI implementation of the backend the extension talks to (`GET /health`, `POST /vibe/ask`, `POST /vibe/chat` over SSE), running on Ollama with an optional OpenAI-compatible fallback (OpenRouter / OpenCode Zen). This previously existed only inside the lost Colab notebook.
-- `backend/mendes_colab.ipynb` — one-click Colab notebook: installs Ollama, pulls the models, starts the router, opens a Cloudflare quick tunnel and prints `MENDES_URL` / `MENDES_TOKEN`.
+- `backend/cloud_colab.ipynb` — one-click Colab notebook: installs Ollama, pulls the models, starts the router, opens a Cloudflare quick tunnel and prints `CLOUD_URL` / `CLOUD_TOKEN`.
 - `backend/tests/smoke_test.py` — end-to-end protocol test against a mock Ollama; runs in CI.
 - Build tooling that was not in the VSIX: `esbuild.config.mjs`, `tsconfig.json`, `.vscodeignore`, VS Code launch/tasks, GitHub Actions CI that type-checks, packages the VSIX and attaches it to tagged releases.
 
@@ -33,14 +41,14 @@ Recovery release, now maintained at [cloud-fronts-group/mendes-ai](https://githu
 
 ## [0.3.0] — 2026-05-12
 
-The "first-class chat" release. Mendes AI now has a dedicated icon in the VS Code Activity Bar (same UX as GitHub Copilot Chat / Claude Code / Cursor) — the chat lives in the sidebar, always one click away.
+The "first-class chat" release. Cloud AI now has a dedicated icon in the VS Code Activity Bar (same UX as GitHub Copilot Chat / Claude Code / Cursor) — the chat lives in the sidebar, always one click away.
 
 ### Added
-- **Activity Bar entry** — a Mendes AI icon appears in the left rail. Click to open the chat sidebar.
+- **Activity Bar entry** — a Cloud AI icon appears in the left rail. Click to open the chat sidebar.
 - **Persistent sidebar chat** — uses `WebviewViewProvider`; state survives hiding the panel.
 - **Auto-reveal on first install** — the chat opens automatically the first time you activate the extension, so you can use it immediately.
-- **New command** `Mendes: Focus Chat (Sidebar)` (mapped to `Ctrl+Shift+M` / `Cmd+Shift+M`).
-- `Mendes: Open Chat in Editor` continues to work for users who prefer the chat as a tab.
+- **New command** `Cloud: Focus Chat (Sidebar)` (mapped to `Ctrl+Shift+M` / `Cmd+Shift+M`).
+- `Cloud: Open Chat in Editor` continues to work for users who prefer the chat as a tab.
 
 ### Changed
 - Refactored chat internals into a reusable `ChatRuntime` so both the sidebar view and the editor panel share the same logic (history, tool-loop, slash commands).
@@ -48,7 +56,7 @@ The "first-class chat" release. Mendes AI now has a dedicated icon in the VS Cod
 
 ## [0.2.0] — 2026-05-12
 
-The "specialist" release. Mendes AI now ships with 14 slash commands that turn the chat into a Data Science and AI Engineering expert.
+The "specialist" release. Cloud AI now ships with 14 slash commands that turn the chat into a Data Science and AI Engineering expert.
 
 ### Added — 14 slash commands
 
@@ -87,4 +95,4 @@ Initial public release.
 - Code actions: Explain Selection (`Ctrl+Alt+E`), Refactor Selection (`Ctrl+Alt+R`), Generate at Cursor.
 - Status bar with live `/health` polling and VRAM usage.
 - Clear network-error messages when the Cloudflared tunnel is offline.
-- Settings: `mendes.tunnelUrl`, `mendes.token` (machine-scoped), `mendes.toolsEnabled`, `mendes.healthPollSeconds`.
+- Settings: `cloud.tunnelUrl`, `cloud.token` (machine-scoped), `cloud.toolsEnabled`, `cloud.healthPollSeconds`.

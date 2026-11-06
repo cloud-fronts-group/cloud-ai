@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mendes AI — reference backend.
+Cloud AI — reference backend.
 
 Implements the exact HTTP + Server-Sent-Events protocol that the VS Code
 extension speaks (see ``src/client.ts``):
@@ -9,18 +9,18 @@ extension speaks (see ``src/client.ts``):
     POST /vibe/ask    -> SSE  route, token*, [error], done
     POST /vibe/chat   -> SSE  route, token*, tool_call*, [error], done
 
-Every request must carry ``Authorization: Bearer $MENDES_TOKEN``.
+Every request must carry ``Authorization: Bearer $CLOUD_TOKEN``.
 
 Inference runs on Ollama (``/api/chat`` streaming, with tools). When
-``MENDES_FALLBACK_KEY`` is set, an OpenAI-compatible endpoint (OpenRouter by
+``CLOUD_FALLBACK_KEY`` is set, an OpenAI-compatible endpoint (OpenRouter by
 default) is used if Ollama cannot be reached or rejects the request.
 
 The server is stateless: the extension owns the conversation history and
 executes every tool call locally, then posts the full transcript back.
 
 Run locally:
-    MENDES_TOKEN=secret python backend/server.py
-    # or: MENDES_TOKEN=secret uvicorn server:app --host 0.0.0.0 --port 8000
+    CLOUD_TOKEN=secret python backend/server.py
+    # or: CLOUD_TOKEN=secret uvicorn server:app --host 0.0.0.0 --port 8000
 """
 from __future__ import annotations
 
@@ -38,8 +38,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-VERSION = "0.4.0"
-REPO = "https://github.com/cloud-fronts-group/mendes-ai"
+VERSION = "0.5.0"
+REPO = "https://github.com/cloud-fronts-group/cloud-ai"
 
 
 # ── Configuration (environment) ──────────────────────────────────────────
@@ -51,28 +51,28 @@ def _with_scheme(host: str) -> str:
     return host if "://" in host else f"http://{host}"
 
 
-TOKEN = _env("MENDES_TOKEN") or secrets.token_urlsafe(24)
-HOST = _env("MENDES_HOST", "0.0.0.0")
-PORT = int(_env("MENDES_PORT", "8000"))
+TOKEN = _env("CLOUD_TOKEN") or secrets.token_urlsafe(24)
+HOST = _env("CLOUD_HOST", "0.0.0.0")
+PORT = int(_env("CLOUD_PORT", "8000"))
 
 OLLAMA_HOST = _with_scheme(_env("OLLAMA_HOST", "http://127.0.0.1:11434")).rstrip("/")
-CODE_MODEL = _env("MENDES_CODE_MODEL", "qwen3:30b")
-VISION_MODEL = _env("MENDES_VISION_MODEL", "gemma3:27b")
-AGENTIC_MODEL = _env("MENDES_AGENTIC_MODEL") or CODE_MODEL
-NUM_CTX = int(_env("MENDES_NUM_CTX", "16384"))
-TEMPERATURE = float(_env("MENDES_TEMPERATURE", "0.2"))
-THINK = _env("MENDES_THINK").lower()  # "" = model default, "0"/"1" = force off/on
+CODE_MODEL = _env("CLOUD_CODE_MODEL", "qwen3:30b")
+VISION_MODEL = _env("CLOUD_VISION_MODEL", "gemma3:27b")
+AGENTIC_MODEL = _env("CLOUD_AGENTIC_MODEL") or CODE_MODEL
+NUM_CTX = int(_env("CLOUD_NUM_CTX", "16384"))
+TEMPERATURE = float(_env("CLOUD_TEMPERATURE", "0.2"))
+THINK = _env("CLOUD_THINK").lower()  # "" = model default, "0"/"1" = force off/on
 
 # Optional OpenAI-compatible fallback (the RouteEvent enum allows openrouter | opencode_zen)
-FALLBACK_NAME = _env("MENDES_FALLBACK_NAME", "openrouter")
-FALLBACK_URL = _env("MENDES_FALLBACK_URL", "https://openrouter.ai/api/v1").rstrip("/")
-FALLBACK_KEY = _env("MENDES_FALLBACK_KEY")
-FALLBACK_MODEL = _env("MENDES_FALLBACK_MODEL", "qwen/qwen3-coder")
+FALLBACK_NAME = _env("CLOUD_FALLBACK_NAME", "openrouter")
+FALLBACK_URL = _env("CLOUD_FALLBACK_URL", "https://openrouter.ai/api/v1").rstrip("/")
+FALLBACK_KEY = _env("CLOUD_FALLBACK_KEY")
+FALLBACK_MODEL = _env("CLOUD_FALLBACK_MODEL", "qwen/qwen3-coder")
 
 REQUEST_TIMEOUT = httpx.Timeout(connect=10.0, read=600.0, write=60.0, pool=10.0)
 
 # ── Prompts ──────────────────────────────────────────────────────────────
-SYSTEM_CHAT = """You are Mendes AI, a Vibe Coding assistant that lives in a VS Code sidebar.
+SYSTEM_CHAT = """You are Cloud AI, a Vibe Coding assistant that lives in a VS Code sidebar.
 You help with general coding, data analytics, data science / ML and AI engineering.
 
 Ground rules:
@@ -82,7 +82,7 @@ Ground rules:
 - If a slash-command skill is active (a system message framed by === SKILL ... === END SKILL ===), follow it as your primary guide for this response.
 - Answer in the language the user writes in (Portuguese or English)."""
 
-SYSTEM_ASK = """You are Mendes AI, a coding assistant invoked from a VS Code editor command (explain, refactor or generate).
+SYSTEM_ASK = """You are Cloud AI, a coding assistant invoked from a VS Code editor command (explain, refactor or generate).
 Follow the instructions in the user message exactly. When asked for code only, return only code: no Markdown fences, no commentary."""
 
 
@@ -187,7 +187,7 @@ TOOLS: list[dict[str, Any]] = [
     ),
     _tool(
         "memory_write",
-        "Persist a named Markdown note under ~/.mendes/memory for future sessions.",
+        "Persist a named Markdown note under ~/.cloud/memory for future sessions.",
         {"name": {"type": "string"}, "content": {"type": "string"}},
         ["name", "content"],
     ),
@@ -381,7 +381,7 @@ async def openai_stream(
     headers = {"Authorization": f"Bearer {FALLBACK_KEY}", "Content-Type": "application/json"}
     if "openrouter" in FALLBACK_URL:
         headers["HTTP-Referer"] = REPO
-        headers["X-Title"] = "Mendes AI"
+        headers["X-Title"] = "Cloud AI"
 
     pending: dict[int, dict[str, str]] = {}
     try:
@@ -517,7 +517,7 @@ def gpu_stats() -> dict[str, Any]:
 
 
 # ── HTTP layer ───────────────────────────────────────────────────────────
-app = FastAPI(title="Mendes AI backend", version=VERSION, docs_url=None, redoc_url=None)
+app = FastAPI(title="Cloud AI backend", version=VERSION, docs_url=None, redoc_url=None)
 
 SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
@@ -542,7 +542,7 @@ class ChatBody(BaseModel):
 
 @app.get("/")
 async def root() -> dict[str, Any]:
-    return {"name": "mendes-ai-backend", "version": VERSION, "endpoints": ["/health", "/vibe/ask", "/vibe/chat"], "repo": REPO}
+    return {"name": "cloud-ai-backend", "version": VERSION, "endpoints": ["/health", "/vibe/ask", "/vibe/chat"], "repo": REPO}
 
 
 @app.get("/health")
@@ -598,11 +598,11 @@ async def vibe_chat(body: ChatBody, request: Request, _: None = Depends(auth)) -
 if __name__ == "__main__":
     import uvicorn
 
-    if not _env("MENDES_TOKEN"):
-        print(f"[mendes] MENDES_TOKEN not set — generated one for this run:\n[mendes] MENDES_TOKEN={TOKEN}", flush=True)
+    if not _env("CLOUD_TOKEN"):
+        print(f"[cloud] CLOUD_TOKEN not set — generated one for this run:\n[cloud] CLOUD_TOKEN={TOKEN}", flush=True)
     print(
-        f"[mendes] v{VERSION} · ollama={OLLAMA_HOST} · code={CODE_MODEL} · vision={VISION_MODEL} · "
+        f"[cloud] v{VERSION} · ollama={OLLAMA_HOST} · code={CODE_MODEL} · vision={VISION_MODEL} · "
         f"agentic={AGENTIC_MODEL} · fallback={'on:' + FALLBACK_NAME if FALLBACK_KEY else 'off'}",
         flush=True,
     )
-    uvicorn.run(app, host=HOST, port=PORT, log_level=_env("MENDES_LOG_LEVEL", "info"))
+    uvicorn.run(app, host=HOST, port=PORT, log_level=_env("CLOUD_LOG_LEVEL", "info"))

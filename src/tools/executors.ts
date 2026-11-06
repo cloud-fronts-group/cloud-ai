@@ -202,7 +202,7 @@ export async function web_fetch(args: ToolArgs): Promise<string> {
   const maxChars = asNumber(args, "max_chars", 8000);
   try {
     const r = await fetch(url, {
-      headers: { "User-Agent": "Mendes-AI/0.1 (+vscode)" },
+      headers: { "User-Agent": "Cloud-AI/0.1 (+vscode)" },
       redirect: "follow",
     });
     if (!r.ok) return `ERRO ao buscar ${url}: HTTP ${r.status}`;
@@ -237,7 +237,7 @@ export async function web_search(args: ToolArgs): Promise<string> {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0 (Mendes-AI search)",
+        "User-Agent": "Mozilla/5.0 (Cloud-AI search)",
       },
       body: `q=${encodeURIComponent(query)}`,
       redirect: "follow",
@@ -292,7 +292,7 @@ export function getTodos() {
 
 // ─── memory ───────────────────────────────────────────────────────────────
 function memoryDir(): string {
-  return path.join(os.homedir(), ".mendes", "memory");
+  return path.join(os.homedir(), ".cloud", "memory");
 }
 
 export async function memory_write(args: ToolArgs): Promise<string> {

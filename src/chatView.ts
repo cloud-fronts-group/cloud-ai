@@ -4,11 +4,11 @@ import { ChatRuntime } from "./chatRuntime";
 /**
  * Provider da view de chat que aparece no sidebar (Activity Bar). É o ponto
  * de entrada principal da extensão — sempre disponível, persistente entre
- * sessões, e abre automaticamente quando o usuário clica no ícone do Mendes
+ * sessões, e abre automaticamente quando o usuário clica no ícone do Cloud
  * AI na Activity Bar.
  */
 export class ChatViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = "mendes.chatView";
+  public static readonly viewType = "cloud.chatView";
   private runtime: ChatRuntime | undefined;
 
   constructor(

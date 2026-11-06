@@ -12,8 +12,8 @@ export class StatusBar {
       vscode.StatusBarAlignment.Right,
       100,
     );
-    this.item.command = "mendes.healthCheck";
-    this.item.text = "$(circle-slash) Mendes";
+    this.item.command = "cloud.healthCheck";
+    this.item.text = "$(circle-slash) Cloud";
     this.item.show();
   }
 
@@ -27,8 +27,8 @@ export class StatusBar {
     if (this.disposed) return;
     const cfg = getConfig();
     if (!cfg.tunnelUrl || !cfg.token) {
-      this.item.text = "$(circle-slash) Mendes";
-      this.item.tooltip = "Configure mendes.tunnelUrl e mendes.token";
+      this.item.text = "$(circle-slash) Cloud";
+      this.item.tooltip = "Configure cloud.tunnelUrl e cloud.token";
       return;
     }
     try {
@@ -36,7 +36,7 @@ export class StatusBar {
       const vramPct = Math.round(
         (h.gpu.vram_used_mb / h.gpu.vram_total_mb) * 100,
       );
-      this.item.text = `$(pulse) Mendes ${vramPct}%`;
+      this.item.text = `$(pulse) Cloud ${vramPct}%`;
       this.item.tooltip =
         `${h.gpu.name}\n` +
         `VRAM ${h.gpu.vram_used_mb}/${h.gpu.vram_total_mb} MB (${vramPct}%)\n` +
@@ -44,7 +44,7 @@ export class StatusBar {
         `code: ${h.models.code ?? "—"}\n` +
         `vision: ${h.models.vision ?? "—"}`;
     } catch (e) {
-      this.item.text = "$(error) Mendes";
+      this.item.text = "$(error) Cloud";
       this.item.tooltip = `offline: ${(e as Error).message}`;
     }
   }

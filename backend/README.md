@@ -1,4 +1,4 @@
-# Mendes AI backend
+# Cloud AI backend
 
 The VS Code extension is only a client. It needs an HTTP server that speaks the
 protocol below. The original author ran it inside a Colab notebook that was lost
@@ -7,20 +7,20 @@ reconstructed from the client code (`src/client.ts`).
 
 ## Run it
 
-**On Google Colab (the intended setup):** open [`mendes_colab.ipynb`](mendes_colab.ipynb)
-([open in Colab](https://colab.research.google.com/github/cloud-fronts-group/mendes-ai/blob/main/backend/mendes_colab.ipynb)),
-choose a GPU runtime and *Run all*. The last cell prints `MENDES_URL` and `MENDES_TOKEN`.
+**On Google Colab (the intended setup):** open [`cloud_colab.ipynb`](cloud_colab.ipynb)
+([open in Colab](https://colab.research.google.com/github/cloud-fronts-group/cloud-ai/blob/main/backend/cloud_colab.ipynb)),
+choose a GPU runtime and *Run all*. The last cell prints `CLOUD_URL` and `CLOUD_TOKEN`.
 
 **Anywhere with Ollama:**
 
 ```bash
 pip install -r backend/requirements.txt
 ollama pull qwen3:30b && ollama pull gemma3:27b     # or smaller models, see below
-MENDES_TOKEN=change-me python backend/server.py     # listens on 0.0.0.0:8000
+CLOUD_TOKEN=change-me python backend/server.py     # listens on 0.0.0.0:8000
 ```
 
-Then in VS Code → Settings → Mendes AI set `mendes.tunnelUrl` to `http://localhost:8000`
-(or your tunnel URL) and `mendes.token` to the same token.
+Then in VS Code → Settings → Cloud AI set `cloud.tunnelUrl` to `http://localhost:8000`
+(or your tunnel URL) and `cloud.token` to the same token.
 
 **Smoke test without any model** (starts a mock Ollama, runs the protocol end to end):
 
@@ -32,33 +32,33 @@ python backend/tests/smoke_test.py
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `MENDES_TOKEN` | random, printed at start | Bearer token the extension must send |
-| `MENDES_HOST` / `MENDES_PORT` | `0.0.0.0` / `8000` | Bind address |
+| `CLOUD_TOKEN` | random, printed at start | Bearer token the extension must send |
+| `CLOUD_HOST` / `CLOUD_PORT` | `0.0.0.0` / `8000` | Bind address |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama server |
-| `MENDES_CODE_MODEL` | `qwen3:30b` | Text-only turns |
-| `MENDES_VISION_MODEL` | `gemma3:27b` | Turns with an image attached |
-| `MENDES_AGENTIC_MODEL` | same as code model | Turns with tools enabled (must support tool calling) |
-| `MENDES_NUM_CTX` | `16384` | Context window passed to Ollama |
-| `MENDES_TEMPERATURE` | `0.2` | Sampling temperature |
-| `MENDES_THINK` | unset | `0`/`1` to force thinking off/on for models that support it |
-| `MENDES_FALLBACK_KEY` | unset | Enables an OpenAI-compatible fallback when Ollama fails |
-| `MENDES_FALLBACK_NAME` | `openrouter` | Reported in the `route` event (`openrouter` or `opencode_zen`) |
-| `MENDES_FALLBACK_URL` | `https://openrouter.ai/api/v1` | Base URL of the fallback |
-| `MENDES_FALLBACK_MODEL` | `qwen/qwen3-coder` | Fallback model id |
+| `CLOUD_CODE_MODEL` | `qwen3:30b` | Text-only turns |
+| `CLOUD_VISION_MODEL` | `gemma3:27b` | Turns with an image attached |
+| `CLOUD_AGENTIC_MODEL` | same as code model | Turns with tools enabled (must support tool calling) |
+| `CLOUD_NUM_CTX` | `16384` | Context window passed to Ollama |
+| `CLOUD_TEMPERATURE` | `0.2` | Sampling temperature |
+| `CLOUD_THINK` | unset | `0`/`1` to force thinking off/on for models that support it |
+| `CLOUD_FALLBACK_KEY` | unset | Enables an OpenAI-compatible fallback when Ollama fails |
+| `CLOUD_FALLBACK_NAME` | `openrouter` | Reported in the `route` event (`openrouter` or `opencode_zen`) |
+| `CLOUD_FALLBACK_URL` | `https://openrouter.ai/api/v1` | Base URL of the fallback |
+| `CLOUD_FALLBACK_MODEL` | `qwen/qwen3-coder` | Fallback model id |
 
 Smaller GPUs: `qwen2.5-coder:7b` + `gemma3:4b` fit in ~8 GB and both support what the
 extension needs (tool calling and images respectively).
 
 ## Protocol
 
-All endpoints require `Authorization: Bearer <MENDES_TOKEN>`.
+All endpoints require `Authorization: Bearer <CLOUD_TOKEN>`.
 
 ### `GET /health`
 
 ```json
 {
   "status": "ok",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "models": { "code": "qwen3:30b", "vision": "gemma3:27b", "agentic": "qwen3:30b" },
   "routing": "image->vision · tools->agentic · else->code",
   "gpu": { "name": "NVIDIA L4", "vram_used_mb": 18210, "vram_total_mb": 23034, "gpu_util_pct": 0, "temp_c": 41 }

@@ -7,7 +7,7 @@ export async function explainSelection(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
-    vscode.window.showWarningMessage("Mendes: selecione algum código primeiro.");
+    vscode.window.showWarningMessage("Cloud: selecione algum código primeiro.");
     return;
   }
 
@@ -26,13 +26,13 @@ export async function explainSelection(
 
   output.show(true);
   output.appendLine("");
-  output.appendLine(`── Mendes: Explain ${fname}:${editor.selection.start.line + 1} ──`);
+  output.appendLine(`── Cloud: Explain ${fname}:${editor.selection.start.line + 1} ──`);
 
   const ctrl = new AbortController();
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: "Mendes: explicando…",
+      title: "Cloud: explicando…",
       cancellable: true,
     },
     async (_p, token) => {
@@ -57,7 +57,7 @@ export async function explainSelection(
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
           output.appendLine(`\n[fail] ${(e as Error).message}`);
-          vscode.window.showErrorMessage(`Mendes: ${(e as Error).message}`);
+          vscode.window.showErrorMessage(`Cloud: ${(e as Error).message}`);
         }
       }
     },

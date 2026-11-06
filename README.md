@@ -1,6 +1,6 @@
-# Mendes AI — General Coding + Data + Data Science + AI Engineering
+# Cloud AI — General Coding + Data + Data Science + AI Engineering
 
-A Vibe Coding assistant for VS Code that goes far beyond simple chat. **Mendes AI** turns your editor into a specialist across four full areas:
+A Vibe Coding assistant for VS Code that goes far beyond simple chat. **Cloud AI** turns your editor into a specialist across four full areas:
 
 - **General coding** — explain, refactor, generate, fix code in any language
 - **Data analytics** — inventory datasets, frame business questions, drill into root causes, generate decks
@@ -17,7 +17,7 @@ All powered by large open-weight models (Qwen, Gemma, custom GGUFs) running on *
    ┌─────────────────────┐               ┌──────────────────────────┐
    │ VS Code (you)       │               │ Google Colab Pro (L4/A100)│
    │  ┌───────────────┐  │   HTTPS/SSE   │  ┌────────────────────┐  │
-   │  │ Mendes AI     │◄─┼───tunnel──────┼─▶│ FastAPI router     │  │
+   │  │ Cloud AI      │◄─┼───tunnel──────┼─▶│ FastAPI router     │  │
    │  │ sidebar chat  │  │               │  │  + Ollama runtime  │  │
    │  └───────────────┘  │               │  └────────────────────┘  │
    │  - 14 slash skills  │               │    Qwen 27B · Gemma 26B  │
@@ -34,11 +34,11 @@ The big models live where there's VRAM. Your editor stays light. Tools execute *
 
 ### 🧑‍💻 General coding (works everywhere)
 
-- **Open Chat**: dedicated sidebar chat with a Mendes AI icon in the Activity Bar (same UX as Copilot Chat / Claude Code). Click and use, no setup ritual.
+- **Open Chat**: dedicated sidebar chat with a Cloud AI icon in the Activity Bar (same UX as Copilot Chat / Claude Code). Click and use, no setup ritual.
 - **Inline commands**:
-  - `Mendes: Explain Selection` (`Ctrl+Alt+E`)
-  - `Mendes: Refactor Selection` (`Ctrl+Alt+R`)
-  - `Mendes: Generate at Cursor`
+  - `Cloud: Explain Selection` (`Ctrl+Alt+E`)
+  - `Cloud: Refactor Selection` (`Ctrl+Alt+R`)
+  - `Cloud: Generate at Cursor`
 - **Tool calling**: the model can read/write files, run bash, grep, glob, fetch the web, etc. Every tool call shows a confirmation modal with **Accept / Always / Deny**. Dangerous bash patterns (`rm -rf /`, `dd`, fork bombs) block the "Always" option as a safety net.
 - **Voice input** and **image attachments** for vision-capable models.
 - **Persistent chat history** across sessions.
@@ -68,7 +68,7 @@ Adapted from [HungHsunHan/claude-code-data-science-team](https://github.com/Hung
 
 ### 🤖 AI Engineering — `/rag`, `/prompt`, `/finetune`, `/eval`, `/agent`
 
-Original to Mendes AI — built from current best practices.
+Original to Cloud AI — built from current best practices.
 
 | Slash | What it does |
 |---|---|
@@ -84,19 +84,19 @@ Type `/skills` or `/help` in the chat to list all 14 with descriptions.
 
 ## Quick start
 
-1. **Install** — download the latest `mendes-ai-*.vsix` from this repository's [Releases](https://github.com/cloud-fronts-group/mendes-ai/releases) (or build it yourself: `npm install && npm run package`), then:
+1. **Install** — download the latest `cloud-ai-*.vsix` from this repository's [Releases](https://github.com/cloud-fronts-group/cloud-ai/releases) (or build it yourself: `npm install && npm run package`), then:
    ```bash
-   code --install-extension mendes-ai-0.4.0.vsix
+   code --install-extension cloud-ai-0.5.0.vsix
    ```
-2. **Spin up the backend** — open [`backend/mendes_colab.ipynb`](backend/mendes_colab.ipynb) in Colab ([one-click](https://colab.research.google.com/github/cloud-fronts-group/mendes-ai/blob/main/backend/mendes_colab.ipynb)), pick a GPU runtime and run all cells. The last cell prints:
+2. **Spin up the backend** — open [`backend/cloud_colab.ipynb`](backend/cloud_colab.ipynb) in Colab ([one-click](https://colab.research.google.com/github/cloud-fronts-group/cloud-ai/blob/main/backend/cloud_colab.ipynb)), pick a GPU runtime and run all cells. The last cell prints:
    ```
-   MENDES_URL=https://xxxxx.trycloudflare.com
-   MENDES_TOKEN=...
+   CLOUD_URL=https://xxxxx.trycloudflare.com
+   CLOUD_TOKEN=...
    ```
-3. **Configure VS Code** — open Settings → search "Mendes AI":
-   - `mendes.tunnelUrl` → the Cloudflared URL
-   - `mendes.token` → the token
-4. Click the **Mendes AI icon** in the Activity Bar (the brain + chip in the left rail) — the chat opens in the sidebar.
+3. **Configure VS Code** — open Settings → search "Cloud AI":
+   - `cloud.tunnelUrl` → the Cloudflared URL
+   - `cloud.token` → the token
+4. Click the **Cloud AI icon** in the Activity Bar (the brain + chip in the left rail) — the chat opens in the sidebar.
 5. Type `/skills` to see everything you can do.
 
 ### Running the backend somewhere other than Colab
@@ -105,7 +105,7 @@ The backend is a small FastAPI server over Ollama — see [`backend/README.md`](
 
 ```bash
 pip install -r backend/requirements.txt
-MENDES_TOKEN=change-me python backend/server.py      # then set mendes.tunnelUrl=http://localhost:8000
+CLOUD_TOKEN=change-me python backend/server.py      # then set cloud.tunnelUrl=http://localhost:8000
 ```
 
 It also documents the wire protocol (`/health`, `/vibe/ask`, `/vibe/chat` over SSE) if you want to point the extension at your own inference stack.
@@ -114,16 +114,16 @@ It also documents the wire protocol (`/health`, `/vibe/ask`, `/vibe/chat` over S
 
 | Setting | Default | Purpose |
 |---|---|---|
-| `mendes.tunnelUrl` | `""` | Cloudflared tunnel URL from your Colab session |
-| `mendes.token` | `""` | Bearer token sent on every request (machine-scoped, doesn't sync) |
-| `mendes.toolsEnabled` | `false` | Allow the model to call tools (file I/O, bash, web) |
-| `mendes.healthPollSeconds` | `10` | How often to poll `/health` for the status bar |
+| `cloud.tunnelUrl` | `""` | Cloudflared tunnel URL from your Colab session |
+| `cloud.token` | `""` | Bearer token sent on every request (machine-scoped, doesn't sync) |
+| `cloud.toolsEnabled` | `false` | Allow the model to call tools (file I/O, bash, web) |
+| `cloud.healthPollSeconds` | `10` | How often to poll `/health` for the status bar |
 
 ## Keybindings
 
 | Action | Shortcut |
 |---|---|
-| Focus Mendes chat (sidebar) | `Ctrl+Shift+M` (`Cmd+Shift+M`) |
+| Focus Cloud chat (sidebar) | `Ctrl+Shift+M` (`Cmd+Shift+M`) |
 | Explain selection | `Ctrl+Alt+E` |
 | Refactor selection | `Ctrl+Alt+R` |
 
@@ -153,7 +153,7 @@ It also documents the wire protocol (`/health`, `/vibe/ask`, `/vibe/chat` over S
 npm install            # esbuild + TypeScript + vsce, no runtime dependencies
 npm run typecheck      # tsc --noEmit
 npm run build          # bundles src/ -> dist/extension.js
-npm run package        # produces mendes-ai-<version>.vsix
+npm run package        # produces cloud-ai-<version>.vsix
 npm run test:backend   # protocol smoke test against a mock Ollama (needs backend/requirements.txt)
 ```
 
@@ -161,11 +161,11 @@ Press **F5** in VS Code to launch an Extension Development Host with the extensi
 
 ## Issues & contributing
 
-Bug reports, feature requests, and PRs are welcome at [github.com/cloud-fronts-group/mendes-ai](https://github.com/cloud-fronts-group/mendes-ai/issues).
+Bug reports, feature requests, and PRs are welcome at [github.com/cloud-fronts-group/cloud-ai](https://github.com/cloud-fronts-group/cloud-ai/issues).
 
 ## Provenance
 
-Mendes AI was written by Alex Mendes and published to the VS Code Marketplace as `mendesalex89.mendes-ai` (v0.1.0–0.3.2, May 2026). The source repository the listing links to, `mendesalex89/AI_Assistant`, no longer exists on GitHub, and none of the author's other public repositories contain it.
+Cloud AI began as **Mendes AI**, written by Alex Mendes and published to the VS Code Marketplace as `mendesalex89.mendes-ai` (v0.1.0–0.3.2, May 2026). The source repository the listing links to, `mendesalex89/AI_Assistant`, no longer exists on GitHub, and none of the author's other public repositories contain it.
 
 This repository restores the project:
 

@@ -75,7 +75,7 @@ export async function askPermission(
   buttons.push("Deny");
 
   const choice = await vscode.window.showWarningMessage(
-    `Mendes AI quer executar: ${name}`,
+    `Cloud AI quer executar: ${name}`,
     { modal: true, detail },
     ...buttons,
   );
@@ -87,14 +87,14 @@ export async function askPermission(
       if (firstWord) {
         state.alwaysAllowedBashPrefixes.add(firstWord);
         vscode.window.setStatusBarMessage(
-          `Mendes: 'bash ${firstWord} …' sempre permitido nesta sessão`,
+          `Cloud: 'bash ${firstWord} …' sempre permitido nesta sessão`,
           5000,
         );
       }
     } else {
       state.alwaysAllowedTools.add(name);
       vscode.window.setStatusBarMessage(
-        `Mendes: '${name}' sempre permitido nesta sessão`,
+        `Cloud: '${name}' sempre permitido nesta sessão`,
         5000,
       );
     }

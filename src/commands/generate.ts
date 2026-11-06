@@ -7,12 +7,12 @@ export async function generateAtCursor(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    vscode.window.showWarningMessage("Mendes: abre um arquivo primeiro.");
+    vscode.window.showWarningMessage("Cloud: abre um arquivo primeiro.");
     return;
   }
 
   const instruction = await vscode.window.showInputBox({
-    title: "Mendes Generate",
+    title: "Cloud Generate",
     prompt: "O que gerar no cursor?",
     placeHolder: "ex.: função pra debounce · teste pytest pra UserService.create",
     ignoreFocusOut: true,
@@ -44,7 +44,7 @@ export async function generateAtCursor(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: "Mendes: gerando…",
+      title: "Cloud: gerando…",
       cancellable: true,
     },
     async (_p, token) => {
@@ -67,7 +67,7 @@ export async function generateAtCursor(
         }
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
-        vscode.window.showErrorMessage(`Mendes generate: ${(e as Error).message}`);
+        vscode.window.showErrorMessage(`Cloud generate: ${(e as Error).message}`);
       }
     },
   );
@@ -78,7 +78,7 @@ export async function generateAtCursor(
   const edit = new vscode.WorkspaceEdit();
   edit.insert(editor.document.uri, cursorPos, cleaned);
   const ok = await vscode.workspace.applyEdit(edit);
-  if (!ok) vscode.window.showErrorMessage("Mendes: insert falhou.");
+  if (!ok) vscode.window.showErrorMessage("Cloud: insert falhou.");
 }
 
 function stripFences(s: string): string {

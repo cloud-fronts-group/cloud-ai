@@ -86,12 +86,12 @@ def main() -> int:
         [sys.executable, os.path.join(BACKEND, "server.py")],
         env={
             **env,
-            "MENDES_TOKEN": TOKEN,
-            "MENDES_HOST": "127.0.0.1",
-            "MENDES_PORT": str(srv_port),
+            "CLOUD_TOKEN": TOKEN,
+            "CLOUD_HOST": "127.0.0.1",
+            "CLOUD_PORT": str(srv_port),
             "OLLAMA_HOST": f"http://127.0.0.1:{mock_port}",
-            "MENDES_FALLBACK_KEY": "",
-            "MENDES_LOG_LEVEL": "warning",
+            "CLOUD_FALLBACK_KEY": "",
+            "CLOUD_LOG_LEVEL": "warning",
         },
     )
     failures: list[str] = []

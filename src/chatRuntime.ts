@@ -41,7 +41,7 @@ export interface OutboundMessage {
   history?: ChatTurnMessage[];
 }
 
-const HISTORY_KEY = "mendes.chatHistory.v1";
+const HISTORY_KEY = "cloud.chatHistory.v1";
 const MAX_PERSIST_MESSAGES = 200;
 const MAX_TOOL_LOOP_TURNS = 10;
 
@@ -101,7 +101,7 @@ export class ChatRuntime {
         this.currentCtrl?.abort();
         return;
       case "toggleTools": {
-        const cfg = vscode.workspace.getConfiguration("mendes");
+        const cfg = vscode.workspace.getConfiguration("cloud");
         await cfg.update(
           "toolsEnabled",
           !!msg.toolsEnabled,
@@ -328,13 +328,13 @@ export function renderHtml(
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="${csp}" />
   <link rel="stylesheet" href="${styleUri}" />
-  <title>Mendes AI</title>
+  <title>Cloud AI</title>
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
       <span class="dot"></span>
-      <span>Mendes AI</span>
+      <span>Cloud AI</span>
     </div>
     <div class="route" id="route">—</div>
     <div class="actions">
