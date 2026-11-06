@@ -1,0 +1,166 @@
+{
+  "name": "mendes-ai",
+  "displayName": "Mendes AI",
+  "description": "AI/Data Science specialist Vibe Coding assistant — dedicated sidebar chat with 14 slash commands for EDA, ML, RAG, fine-tuning, agents and more. Streams large open-weight models (Qwen, Gemma) from Google Colab into VS Code.",
+  "version": "0.4.0",
+  "publisher": "cloud-fronts-group",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "llm",
+    "chat",
+    "copilot",
+    "ollama",
+    "qwen",
+    "gemma",
+    "colab",
+    "vibe-coding",
+    "code-generation"
+  ],
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#0b0f14",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloud-fronts-group/mendes-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cloud-fronts-group/mendes-ai/issues"
+  },
+  "homepage": "https://github.com/cloud-fronts-group/mendes-ai#readme",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mendesAI",
+          "title": "Mendes AI",
+          "icon": "media/icon-mono.svg"
+        }
+      ]
+    },
+    "views": {
+      "mendesAI": [
+        {
+          "type": "webview",
+          "id": "mendes.chatView",
+          "name": "Chat",
+          "icon": "media/icon-mono.svg",
+          "contextualTitle": "Mendes AI"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "mendes.explain",
+        "title": "Mendes: Explain Selection"
+      },
+      {
+        "command": "mendes.refactor",
+        "title": "Mendes: Refactor Selection"
+      },
+      {
+        "command": "mendes.generate",
+        "title": "Mendes: Generate at Cursor"
+      },
+      {
+        "command": "mendes.chat",
+        "title": "Mendes: Open Chat in Editor"
+      },
+      {
+        "command": "mendes.focusChat",
+        "title": "Mendes: Focus Chat (Sidebar)"
+      },
+      {
+        "command": "mendes.healthCheck",
+        "title": "Mendes: Check Backend Health"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "mendes.explain",
+          "when": "editorHasSelection",
+          "group": "mendes@1"
+        },
+        {
+          "command": "mendes.refactor",
+          "when": "editorHasSelection",
+          "group": "mendes@2"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "mendes.focusChat",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m"
+      },
+      {
+        "command": "mendes.explain",
+        "key": "ctrl+alt+e",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "mendes.refactor",
+        "key": "ctrl+alt+r",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "Mendes AI",
+      "properties": {
+        "mendes.tunnelUrl": {
+          "type": "string",
+          "default": "",
+          "description": "URL do tunnel Cloudflared do Colab (ex.: https://xxx.trycloudflare.com)"
+        },
+        "mendes.token": {
+          "type": "string",
+          "default": "",
+          "description": "Bearer token (MENDES_TOKEN). Use Settings Sync com cuidado.",
+          "scope": "machine"
+        },
+        "mendes.toolsEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Permite o modelo chamar tools (read_file/write_file/edit_file/bash/glob/grep)"
+        },
+        "mendes.healthPollSeconds": {
+          "type": "number",
+          "default": 10,
+          "description": "Intervalo de polling do /health pro status bar"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package --no-dependencies",
+    "test:backend": "python3 backend/tests/smoke_test.py"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}
