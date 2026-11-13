@@ -16,10 +16,10 @@ choose a GPU runtime and *Run all*. The last cell prints `CLOUD_URL` and `CLOUD_
 ```bash
 pip install -r backend/requirements.txt
 ollama pull qwen3:30b && ollama pull gemma3:27b     # or smaller models, see below
-CLOUD_TOKEN=change-me python backend/server.py     # listens on 0.0.0.0:8000
+CLOUD_TOKEN=change-me python backend/server.py     # listens on 0.0.0.0:7655
 ```
 
-Then in VS Code → Settings → Cloud AI set `cloud.tunnelUrl` to `http://localhost:8000`
+Then in VS Code → Settings → Cloud AI set `cloud.tunnelUrl` to `http://localhost:7655`
 (or your tunnel URL) and `cloud.token` to the same token.
 
 **On Colab with Unsloth instead of Ollama:** open [`cloud_colab_unsloth.ipynb`](cloud_colab_unsloth.ipynb)
@@ -46,7 +46,7 @@ python backend/tests/smoke_test.py
 | Variable | Default | Meaning |
 |---|---|---|
 | `CLOUD_TOKEN` | random, printed at start | Bearer token the extension must send |
-| `CLOUD_HOST` / `CLOUD_PORT` | `0.0.0.0` / `8000` | Bind address |
+| `CLOUD_HOST` / `CLOUD_PORT` | `0.0.0.0` / `7655` (`7654` with `CLOUD_BACKEND=unsloth`) | Bind address. Port 8000 is never used: it is reserved for Evidently |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama server |
 | `CLOUD_CODE_MODEL` | `qwen3:30b` | Text-only turns |
 | `CLOUD_VISION_MODEL` | `gemma3:27b` | Turns with an image attached |

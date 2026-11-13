@@ -10,6 +10,7 @@ All notable changes to this extension are documented in this file.
 - `backend/tests/smoke_test_unsloth.py`, run in CI.
 
 ### Changed
+- Default port is no longer 8000 (reserved for Evidently): `7655` for the Ollama router, `7654` with `CLOUD_BACKEND=unsloth`. `CLOUD_PORT=8000` is refused. Local users must update `cloud.tunnelUrl`.
 - `/health` can report `"status": "loading"` while the Unsloth model loads; the `route` event's `backend` can be `unsloth`.
 
 ## [0.5.0] — 2026-11-06

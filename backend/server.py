@@ -22,7 +22,7 @@ executes every tool call locally, then posts the full transcript back.
 
 Run locally:
     CLOUD_TOKEN=secret python backend/server.py
-    # or: CLOUD_TOKEN=secret uvicorn server:app --host 0.0.0.0 --port 8000
+    # or: CLOUD_TOKEN=secret uvicorn server:app --host 0.0.0.0 --port 7655
 """
 from __future__ import annotations
 
@@ -55,7 +55,6 @@ def _with_scheme(host: str) -> str:
 
 TOKEN = _env("CLOUD_TOKEN") or secrets.token_urlsafe(24)
 HOST = _env("CLOUD_HOST", "0.0.0.0")
-PORT = int(_env("CLOUD_PORT", "8000"))
 
 BACKEND = _env("CLOUD_BACKEND", "ollama").lower()  # ollama | unsloth
 if BACKEND not in ("ollama", "unsloth"):
@@ -72,6 +71,10 @@ else:
     unsloth_engine = None  # type: ignore[assignment]
     CODE_MODEL = _env("CLOUD_CODE_MODEL", "qwen3:30b")
     AGENTIC_MODEL = _env("CLOUD_AGENTIC_MODEL") or CODE_MODEL
+# 8000 is reserved for Evidently on our hosts: the Unsloth router takes 7654, everything else 7655 and up.
+PORT = int(_env("CLOUD_PORT", "7654" if BACKEND == "unsloth" else "7655"))
+if PORT == 8000:
+    raise SystemExit("CLOUD_PORT=8000 is reserved for Evidently; use 7654 (unsloth) or 7655+")
 NUM_CTX = int(_env("CLOUD_NUM_CTX", "16384"))
 TEMPERATURE = float(_env("CLOUD_TEMPERATURE", "0.2"))
 THINK = _env("CLOUD_THINK").lower()  # "" = model default, "0"/"1" = force off/on

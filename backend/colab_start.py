@@ -33,7 +33,7 @@ env = os.environ
 env.setdefault("CLOUD_BACKEND", "unsloth")
 env.setdefault("CLOUD_UNSLOTH_MODEL", "unsloth/Qwen3-4B-Instruct-2507")
 env.setdefault("CLOUD_TOKEN", secrets.token_urlsafe(24))
-env["CLOUD_HOST"], port = "127.0.0.1", env.setdefault("CLOUD_PORT", "8000")
+env["CLOUD_HOST"], port = "127.0.0.1", env.setdefault("CLOUD_PORT", "7654")
 
 model = env["CLOUD_UNSLOTH_MODEL"]
 if model.startswith("/content/drive") and not os.path.ismount("/content/drive"):
