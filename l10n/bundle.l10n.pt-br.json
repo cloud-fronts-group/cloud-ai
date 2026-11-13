@@ -19,6 +19,7 @@
   "Set cloud.tunnelUrl and cloud.token": "Configure cloud.tunnelUrl e cloud.token",
   "Stop generating": "Parar geração",
   "Stopped after {0} rounds of tool calls to avoid an endless loop.": "excedeu {0} turns de tool calls — parando para evitar loop infinito.",
+  "The model is still loading. The first start can take several minutes.": "O modelo ainda está carregando. A primeira inicialização pode levar vários minutos.",
   "This command needs care (sudo, rm, force push, kill -9).": "comando requer atenção (sudo, rm, force push, kill -9).",
   "What should be generated at the cursor?": "O que gerar no cursor?",
   "What should change?": "O que mudar?",
