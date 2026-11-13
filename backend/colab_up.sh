@@ -17,9 +17,13 @@
 # a Google OAuth URL and waits up to 10 minutes. It needs a real terminal, so this script
 # refuses to do that step without one. Plain `colab exec` cannot mount Drive.
 #
+#   CLOUDFLARE_TUNNEL_TOKEN + CLOUD_PUBLIC_URL   fixed hostname through a named tunnel
+#                         (default: a quick tunnel whose URL changes on every start)
+#
 # Everything the CLI does in the session is recorded in
-# ~/.config/colab-cli/history/<SESSION>.jsonl (mode 0600). That file will contain
-# CLOUD_TOKEN, because the start script prints it. A notebook copy is written next to it.
+# ~/.config/colab-cli/history/<SESSION>.jsonl (mode 0600). CLOUD_TOKEN is kept out of it:
+# the VM writes it to a file and this script downloads that file to
+# ~/.config/cloud-ai/<SESSION>.token (mode 0600) and prints it once, locally.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -63,12 +67,16 @@ for f in server.py unsloth_engine.py colab_start.py; do
 done
 T="$(mktemp)"; trap 'rm -f "$T"' EXIT; chmod 600 "$T"
 { echo "CLOUD_BACKEND=unsloth"; echo "CLOUD_UNSLOTH_MODEL=$MODEL"
-  env | grep -E '^(CLOUD_(UNSLOTH_|TOKEN|TEMPERATURE|THINK|MAX_NEW_TOKENS|VISION_MODEL|FALLBACK_)|HF_TOKEN=)' \
+  env | grep -E '^(CLOUD_(UNSLOTH_|TOKEN|TEMPERATURE|THINK|MAX_NEW_TOKENS|VISION_MODEL|FALLBACK_|PUBLIC_URL)|CLOUDFLARE_TUNNEL_TOKEN=|HF_TOKEN=)' \
       | grep -v '^CLOUD_UNSLOTH_MODEL=' || true; } > "$T"
 colab upload -s "$S" "$T" /content/.cloud_env >/dev/null
 
 echo "[up] starting the router and the tunnel"
 colab exec -s "$S" -f backend/colab_start.py
+
+TOKDIR="${XDG_CONFIG_HOME:-$HOME/.config}/cloud-ai"; mkdir -p "$TOKDIR"; chmod 700 "$TOKDIR"
+( umask 077; colab download -s "$S" /content/.cloud_token "$TOKDIR/$S.token" >/dev/null )
+echo "CLOUD_TOKEN=$(cat "$TOKDIR/$S.token")    (saved in $TOKDIR/$S.token)"
 
 H="${XDG_CONFIG_HOME:-$HOME/.config}/colab-cli/history"
 colab log -s "$S" -o "$H/$S.ipynb" >/dev/null 2>&1 && chmod 600 "$H/$S.ipynb" && echo "[up] session notebook: $H/$S.ipynb" || true

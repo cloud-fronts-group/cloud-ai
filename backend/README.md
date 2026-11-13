@@ -94,8 +94,15 @@ needed, and replies to the kernel, waiting up to 10 minutes. `colab exec` does n
 at a terminal; it cannot run in CI.
 
 The CLI records every command, execution and stdin exchange of a session in
-`~/.config/colab-cli/history/<session>.jsonl` (owner-only). Because `colab_start.py`
-prints `CLOUD_TOKEN`, that file holds the token: treat it like `.env`.
+`~/.config/colab-cli/history/<session>.jsonl` (owner-only). `colab_start.py` therefore
+does not print `CLOUD_TOKEN`: it writes it to `/content/.cloud_token` on the VM, and
+`colab_up.sh` downloads that to `~/.config/cloud-ai/<session>.token` (owner-only). The
+notebook sets `CLOUD_PRINT_TOKEN=1` and prints it as before.
+
+**Fixed hostname.** By default the tunnel is a Cloudflare quick tunnel and its URL changes
+on every start. To keep one URL, create a named tunnel in Cloudflare Zero Trust with a
+public hostname routed to `http://127.0.0.1:7654`, then set `CLOUDFLARE_TUNNEL_TOKEN` to its
+token and `CLOUD_PUBLIC_URL` to the hostname (`https://...`). Both are forwarded by `colab_up.sh`.
 
 **Smoke test** (canned generation, no GPU or torch needed): `python backend/tests/smoke_test_unsloth.py`
 
