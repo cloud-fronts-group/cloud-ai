@@ -229,40 +229,102 @@ export async function web_fetch(args: ToolArgs): Promise<string> {
 }
 
 // ─── web_search ───────────────────────────────────────────────────────────
+interface SearchHit {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+const strip = (h: string): string => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+/** DuckDuckGo's HTML endpoint. No key needed, but it is scraped: the markup can change. */
+export function parseDuckDuckGo(html: string): SearchHit[] {
+  const hits: SearchHit[] = [];
+  // Anchor and snippet are matched separately so a change to one does not lose the other.
+  const anchors = [...html.matchAll(/<a[^>]*class="[^"]*\bresult__a\b[^"]*"[^>]*>[\s\S]*?<\/a>/g)];
+  const snippets = [...html.matchAll(/class="[^"]*\bresult__snippet\b[^"]*"[^>]*>([\s\S]*?)<\/(?:a|div|span)>/g)];
+  anchors.forEach((m, i) => {
+    const href = /href="([^"]+)"/.exec(m[0])?.[1];
+    if (!href) return;
+    let url = href.replace(/&amp;/g, "&");
+    try {
+      const u = new URL(url.startsWith("//") ? `https:${url}` : url, "https://duckduckgo.com");
+      url = u.searchParams.get("uddg") ?? u.toString();
+    } catch {
+      return;
+    }
+    hits.push({ title: strip(m[0]), url, snippet: strip(snippets[i]?.[1] ?? "") });
+  });
+  return hits;
+}
+
+async function searchDuckDuckGo(query: string): Promise<SearchHit[]> {
+  const r = await fetch("https://html.duckduckgo.com/html/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "Mozilla/5.0 (Cloud-AI search)",
+    },
+    body: `q=${encodeURIComponent(query)}`,
+    redirect: "follow",
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const html = await r.text();
+  const hits = parseDuckDuckGo(html);
+  if (hits.length === 0 && !/no results|No\s+results/i.test(html)) {
+    // A page that is neither results nor "no results" means a block page or changed markup.
+    throw new Error(
+      "DuckDuckGo returned a page this tool could not read (rate limit, bot check or changed markup). " +
+        "Set cloud.search.provider to 'brave' or 'searxng' for an API-backed search.",
+    );
+  }
+  return hits;
+}
+
+async function searchBrave(query: string, n: number, key: string): Promise<SearchHit[]> {
+  if (!key) throw new Error("cloud.search.apiKey is empty (Brave Search API key)");
+  const r = await fetch(
+    `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${n}`,
+    { headers: { Accept: "application/json", "X-Subscription-Token": key } },
+  );
+  if (!r.ok) throw new Error(`Brave HTTP ${r.status}`);
+  const j = (await r.json()) as { web?: { results?: { title?: string; url?: string; description?: string }[] } };
+  return (j.web?.results ?? []).map((x) => ({
+    title: strip(x.title ?? ""),
+    url: x.url ?? "",
+    snippet: strip(x.description ?? ""),
+  }));
+}
+
+async function searchSearxng(query: string, base: string): Promise<SearchHit[]> {
+  if (!base) throw new Error("cloud.search.url is empty (base URL of a SearXNG instance with the JSON format enabled)");
+  const r = await fetch(`${base.replace(/\/+$/, "")}/search?q=${encodeURIComponent(query)}&format=json`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!r.ok) throw new Error(`SearXNG HTTP ${r.status}`);
+  const j = (await r.json()) as { results?: { title?: string; url?: string; content?: string }[] };
+  return (j.results ?? []).map((x) => ({ title: x.title ?? "", url: x.url ?? "", snippet: x.content ?? "" }));
+}
+
 export async function web_search(args: ToolArgs): Promise<string> {
   const query = expectString(args, "query");
-  const maxResults = Math.min(asNumber(args, "max_results", 8), 20);
+  const maxResults = Math.max(1, Math.min(asNumber(args, "max_results", 8), 20));
+  const cfg = vscode.workspace.getConfiguration("cloud.search");
+  const provider = cfg.get<string>("provider") ?? "duckduckgo";
   try {
-    const r = await fetch("https://html.duckduckgo.com/html/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0 (Cloud-AI search)",
-      },
-      body: `q=${encodeURIComponent(query)}`,
-      redirect: "follow",
-    });
-    if (!r.ok) return `ERRO na busca: HTTP ${r.status}`;
-    const html = await r.text();
-    const re =
-      /<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
-    const out: string[] = [];
-    let m: RegExpExecArray | null;
-    let i = 0;
-    while ((m = re.exec(html)) !== null) {
-      if (i++ >= maxResults) break;
-      let link = m[1];
-      const u = new URL(link.startsWith("//") ? `https:${link}` : link, "https://duckduckgo.com");
-      const real = u.searchParams.get("uddg");
-      if (real) link = decodeURIComponent(real);
-      const title = m[2].replace(/<[^>]+>/g, "").trim();
-      const snippet = m[3].replace(/<[^>]+>/g, "").trim();
-      out.push(`${i}. ${title}\n   ${link}\n   ${snippet}`);
-    }
-    if (out.length === 0) return `sem resultados para: ${query}`;
-    return out.join("\n\n");
+    const hits =
+      provider === "brave"
+        ? await searchBrave(query, maxResults, cfg.get<string>("apiKey") ?? "")
+        : provider === "searxng"
+          ? await searchSearxng(query, cfg.get<string>("url") ?? "")
+          : await searchDuckDuckGo(query);
+    if (hits.length === 0) return `no results for: ${query}`;
+    return hits
+      .slice(0, maxResults)
+      .map((h, i) => `${i + 1}. ${h.title}\n   ${h.url}\n   ${h.snippet}`)
+      .join("\n\n");
   } catch (e) {
-    return `ERRO na busca: ${(e as Error).message}`;
+    return `ERROR in web_search (${provider}): ${(e as Error).message}`;
   }
 }
 
