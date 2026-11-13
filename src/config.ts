@@ -20,10 +20,10 @@ export function getConfig(): CloudConfig {
 export function assertConfigured(cfg: CloudConfig): void {
   if (!cfg.tunnelUrl) {
     throw new Error(
-      "cloud.tunnelUrl não configurado. Settings → Cloud AI → Tunnel Url",
+      vscode.l10n.t("cloud.tunnelUrl is not set. Settings → Cloud AI → Tunnel Url"),
     );
   }
   if (!cfg.token) {
-    throw new Error("cloud.token não configurado.");
+    throw new Error(vscode.l10n.t("cloud.token is not set."));
   }
 }

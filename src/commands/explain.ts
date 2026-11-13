@@ -7,7 +7,7 @@ export async function explainSelection(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
-    vscode.window.showWarningMessage("Cloud: selecione algum código primeiro.");
+    vscode.window.showWarningMessage(vscode.l10n.t("Cloud: select some code first."));
     return;
   }
 
@@ -16,8 +16,8 @@ export async function explainSelection(
   const fname = editor.document.fileName.split(/[\\/]/).pop() ?? "(buffer)";
 
   const prompt =
-    `Explica o trecho abaixo de \`${fname}\` (${langId}). ` +
-    `Seja objetivo: o que faz, por que importa, e quaisquer pegadinhas.\n\n` +
+    `Explain the excerpt below from \`${fname}\` (${langId}). ` +
+    `Be concise: what it does, why it matters, and any pitfalls.\n\n` +
     "```" +
     langId +
     "\n" +
@@ -32,7 +32,7 @@ export async function explainSelection(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: "Cloud: explicando…",
+      title: vscode.l10n.t("Cloud: explaining…"),
       cancellable: true,
     },
     async (_p, token) => {

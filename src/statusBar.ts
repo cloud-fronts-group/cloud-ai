@@ -28,7 +28,7 @@ export class StatusBar {
     const cfg = getConfig();
     if (!cfg.tunnelUrl || !cfg.token) {
       this.item.text = "$(circle-slash) Cloud";
-      this.item.tooltip = "Configure cloud.tunnelUrl e cloud.token";
+      this.item.tooltip = vscode.l10n.t("Set cloud.tunnelUrl and cloud.token");
       return;
     }
     try {

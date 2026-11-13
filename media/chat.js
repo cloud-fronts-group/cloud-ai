@@ -84,7 +84,7 @@
       const compact = JSON.stringify(parsed);
       argPreview = compact.length > 200 ? compact.slice(0, 200) + "…" : compact;
     } catch {
-      // mantém raw
+      // keep the raw text
     }
     el.innerHTML =
       `<span class="tool-icon">🔧</span> <span class="tool-name">${escapeHtml(name)}</span>` +
@@ -95,11 +95,11 @@
 
   function addToolResultBubble(name, content) {
     const el = document.createElement("div");
-    const isError = content.startsWith("ERRO");
+    const isError = content.startsWith("ERROR");
     el.className = "bubble tool-result" + (isError ? " tool-error" : "");
     const icon = isError ? "✗" : "✓";
     const truncated =
-      content.length > 1500 ? content.slice(0, 1500) + "\n[…truncado]" : content;
+      content.length > 1500 ? content.slice(0, 1500) + "\n[…truncated]" : content;
     el.innerHTML =
       `<span class="tool-icon">${icon}</span> <span class="tool-name">${escapeHtml(name)}</span>` +
       `<pre class="tool-args"><code>${escapeHtml(truncated)}</code></pre>`;
@@ -145,7 +145,7 @@
       if (assistantRaw) {
         currentAssistant.innerHTML = renderMarkdown(assistantRaw);
       } else {
-        // Bubble vazio (modelo só pediu tool sem texto) — remove
+        // Empty bubble (the model only asked for a tool): remove it
         currentAssistant.remove();
       }
     }
@@ -206,7 +206,7 @@
     });
   }
 
-  // ─── Mensagens vindas do extension host ────────────────────────────
+  // ─── Messages from the extension host ────────────────────────────
   window.addEventListener("message", (event) => {
     const m = event.data;
     switch (m.type) {
@@ -247,7 +247,7 @@
         $messages.scrollTop = $messages.scrollHeight;
         break;
       case "toolCall": {
-        // Encerra qualquer bolha de texto pendente, mostra a tool call.
+        // Close any open text bubble, then show the tool call.
         removeThinkingBubble();
         endCurrentBubble();
         try {
@@ -272,7 +272,7 @@
         break;
       case "error":
         endAssistantTurn();
-        addBubble("error", "erro: " + m.data);
+        addBubble("error", "error: " + m.data);
         break;
       case "reset":
         $messages.innerHTML = "";

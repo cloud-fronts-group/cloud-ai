@@ -46,9 +46,8 @@ const MAX_PERSIST_MESSAGES = 200;
 const MAX_TOOL_LOOP_TURNS = 10;
 
 /**
- * Lógica do chat (history, tool-loop, slash commands, persistência) extraída
- * para poder ser reutilizada tanto por um WebviewPanel (editor tab) quanto por
- * um WebviewView (sidebar). Opera sobre qualquer vscode.Webview.
+ * Chat logic (history, tool loop, slash commands, persistence), shared by the
+ * WebviewPanel (editor tab) and the WebviewView (sidebar). Works on any vscode.Webview.
  */
 export class ChatRuntime {
   private readonly webview: vscode.Webview;
@@ -150,7 +149,7 @@ export class ChatRuntime {
       }
       this.post({
         type: "error",
-        data: `excedeu ${MAX_TOOL_LOOP_TURNS} turns de tool calls — parando para evitar loop infinito.`,
+        data: vscode.l10n.t("Stopped after {0} rounds of tool calls to avoid an endless loop.", MAX_TOOL_LOOP_TURNS),
       });
       await this.persistHistory();
     } finally {
@@ -163,16 +162,16 @@ export class ChatRuntime {
     if (trimmed === "/skills" || trimmed === "/help") {
       const skills = listSkills(this.extUri);
       const lines = [
-        "**Skills disponíveis (slash commands):**",
+        `**${vscode.l10n.t("Available skills (slash commands):")}**`,
         "",
         ...skills.map(
           (s) => `- \`/${s.command}\` — **${s.title}** — ${s.description}`,
         ),
         "",
-        "Exemplos:",
-        "- `/eda` — análise exploratória do dataset atual",
+        vscode.l10n.t("Examples:"),
+        `- \`/eda\` — ${vscode.l10n.t("exploratory analysis of the current dataset")}`,
         "- `/drill ticket volume jumped 55% in June, dimensions: device, app_version, category`",
-        "- `/question` — depois descreva o problema de negócio",
+        `- \`/question\` — ${vscode.l10n.t("then describe the business problem")}`,
       ];
       this.post({ type: "userEcho", data: text });
       this.post({ type: "token", data: lines.join("\n") });
@@ -258,7 +257,7 @@ export class ChatRuntime {
       try {
         args = tc.arguments ? (JSON.parse(tc.arguments) as ToolArgs) : {};
       } catch {
-        const err = `ERRO: arguments JSON inválido em ${tc.name}: ${tc.arguments}`;
+        const err = `ERROR: invalid JSON arguments for ${tc.name}: ${tc.arguments}`;
         this.history.push({ role: "tool", tool_call_id: tc.id, content: err });
         this.post({
           type: "toolResult",
@@ -270,7 +269,7 @@ export class ChatRuntime {
       const allowed = await askPermission(this.permState, tc.name, args);
       let resultText: string;
       if (!allowed) {
-        resultText = "ERRO: usuário negou execução desta ferramenta.";
+        resultText = "ERROR: the user denied this tool call.";
       } else {
         resultText = await execTool(tc.name, args);
       }
@@ -323,7 +322,7 @@ export function renderHtml(
     `font-src ${webview.cspSource};`;
 
   return `<!DOCTYPE html>
-<html lang="pt">
+<html lang="${vscode.env.language}">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="${csp}" />
@@ -338,22 +337,26 @@ export function renderHtml(
     </div>
     <div class="route" id="route">—</div>
     <div class="actions">
-      <label class="toggle" title="Permitir tool calls">
+      <label class="toggle" title="${esc(vscode.l10n.t("Allow tool calls"))}">
         <input type="checkbox" id="tools" /> tools
       </label>
-      <button id="clear" title="Limpar conversa">clear</button>
+      <button id="clear" title="${esc(vscode.l10n.t("Clear the conversation"))}">clear</button>
     </div>
   </header>
   <main id="messages" class="messages"></main>
   <footer class="composer">
-    <textarea id="input" rows="2" placeholder="Mensagem… (/skills lista skills, Enter envia)"></textarea>
+    <textarea id="input" rows="2" placeholder="${esc(vscode.l10n.t("Message… (/skills lists skills, Enter sends)"))}"></textarea>
     <button id="mic" hidden title="Voice input (Web Speech)">🎙</button>
-    <button id="send" title="Enviar (Enter)">▶</button>
-    <button id="stop" hidden title="Parar geração">■</button>
+    <button id="send" title="${esc(vscode.l10n.t("Send (Enter)"))}">▶</button>
+    <button id="stop" hidden title="${esc(vscode.l10n.t("Stop generating"))}">■</button>
   </footer>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
+}
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
 function randomNonce(): string {

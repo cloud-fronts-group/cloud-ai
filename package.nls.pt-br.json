@@ -1,0 +1,6 @@
+{
+  "config.tunnelUrl": "URL do tunnel Cloudflared do Colab (ex.: https://xxx.trycloudflare.com)",
+  "config.token": "Bearer token (CLOUD_TOKEN). Use Settings Sync com cuidado.",
+  "config.toolsEnabled": "Permite o modelo chamar tools (read_file/write_file/edit_file/bash/glob/grep)",
+  "config.healthPollSeconds": "Intervalo de polling do /health pro status bar"
+}

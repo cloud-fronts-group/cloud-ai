@@ -26,7 +26,7 @@ function resolvePath(p: string): string {
 
 function expectString(args: ToolArgs, key: string): string {
   const v = args[key];
-  if (typeof v !== "string") throw new Error(`arg '${key}' deve ser string`);
+  if (typeof v !== "string") throw new Error(`arg '${key}' must be a string`);
   return v;
 }
 
@@ -50,9 +50,9 @@ export async function read_file(args: ToolArgs): Promise<string> {
   try {
     stat = await fs.stat(p);
   } catch {
-    return `ERRO: arquivo não existe: ${p}`;
+    return `ERROR: file does not exist: ${p}`;
   }
-  if (!stat.isFile()) return `ERRO: caminho não é arquivo: ${p}`;
+  if (!stat.isFile()) return `ERROR: path is not a file: ${p}`;
 
   const text = await fs.readFile(p, "utf8");
   const lines = text.split("\n");
@@ -66,7 +66,7 @@ export async function read_file(args: ToolArgs): Promise<string> {
     const body = sliced
       .map((l, i) => `${String(i + s).padStart(5, " ")}\t${l}`)
       .join("\n");
-    return `# ${p} (linhas ${s}-${e} de ${lines.length})\n${body}`;
+    return `# ${p} (lines ${s}-${e} of ${lines.length})\n${body}`;
   }
 
   if (lines.length > MAX_LINES_PER_READ) {
@@ -74,13 +74,13 @@ export async function read_file(args: ToolArgs): Promise<string> {
       .slice(0, MAX_LINES_PER_READ)
       .map((l, i) => `${String(i + 1).padStart(5, " ")}\t${l}`)
       .join("\n");
-    return `# ${p} (${lines.length} linhas — TRUNCADO em ${MAX_LINES_PER_READ})\n${body}`;
+    return `# ${p} (${lines.length} lines — TRUNCATED at ${MAX_LINES_PER_READ})\n${body}`;
   }
 
   const body = lines
     .map((l, i) => `${String(i + 1).padStart(5, " ")}\t${l}`)
     .join("\n");
-  return `# ${p} (${lines.length} linhas)\n${body}`;
+  return `# ${p} (${lines.length} lines)\n${body}`;
 }
 
 // ─── write_file ───────────────────────────────────────────────────────────
@@ -95,8 +95,8 @@ export async function write_file(args: ToolArgs): Promise<string> {
     existed = false;
   }
   await fs.writeFile(p, content, "utf8");
-  const verb = existed ? "atualizado" : "criado";
-  return `OK: arquivo ${verb} (${content.length} chars) — ${p}`;
+  const verb = existed ? "updated" : "created";
+  return `OK: file ${verb} (${content.length} chars) — ${p}`;
 }
 
 // ─── edit_file ────────────────────────────────────────────────────────────
@@ -109,20 +109,20 @@ export async function edit_file(args: ToolArgs): Promise<string> {
   try {
     text = await fs.readFile(p, "utf8");
   } catch {
-    return `ERRO: arquivo não existe: ${p}`;
+    return `ERROR: file does not exist: ${p}`;
   }
 
   const occ = text.split(oldStr).length - 1;
   if (occ === 0) {
-    return `ERRO: old_string não encontrada em ${p}. Verifique indentação/whitespace exato.`;
+    return `ERROR: old_string not found in ${p}. Check the exact indentation and whitespace.`;
   }
   if (occ > 1) {
-    return `ERRO: old_string encontrada ${occ} vezes em ${p}. Inclua mais contexto antes/depois para tornar única.`;
+    return `ERROR: old_string found ${occ} times in ${p}. Include more context before/after to make it unique.`;
   }
 
   const next = text.replace(oldStr, newStr);
   await fs.writeFile(p, next, "utf8");
-  return `OK: 1 substituição aplicada em ${p}`;
+  return `OK: 1 replacement applied in ${p}`;
 }
 
 // ─── bash ─────────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ export async function bash(args: ToolArgs): Promise<string> {
     return out;
   } catch (e) {
     const err = e as { code?: number; stdout?: string; stderr?: string; killed?: boolean; signal?: string };
-    if (err.killed) return `ERRO: timeout após ${timeoutS}s`;
+    if (err.killed) return `ERROR: timeout after ${timeoutS}s`;
     const parts: string[] = [];
     if (err.stdout) parts.push(`STDOUT:\n${err.stdout}`);
     if (err.stderr) parts.push(`STDERR:\n${err.stderr}`);
@@ -166,12 +166,12 @@ export async function glob_files(args: ToolArgs): Promise<string> {
       { maxBuffer: 5 * 1024 * 1024 },
     );
     const matches = stdout.trim().split("\n").filter(Boolean).sort();
-    if (matches.length === 0) return `nenhum arquivo encontrado para padrão ${JSON.stringify(pattern)} em ${cwd}`;
+    if (matches.length === 0) return `no files match ${JSON.stringify(pattern)} in ${cwd}`;
     if (matches.length > 200)
-      return `${matches.length} matches (mostrando 200):\n${matches.slice(0, 200).join("\n")}`;
+      return `${matches.length} matches (showing 200):\n${matches.slice(0, 200).join("\n")}`;
     return matches.join("\n");
   } catch (e) {
-    return `ERRO: ${(e as Error).message}`;
+    return `ERROR: ${(e as Error).message}`;
   }
 }
 
@@ -186,13 +186,13 @@ export async function grep_files(args: ToolArgs): Promise<string> {
       `grep -rEn ${includeFlag} ${JSON.stringify(pattern)} ${JSON.stringify(target)} 2>/dev/null | head -500`,
       { maxBuffer: 5 * 1024 * 1024 },
     );
-    if (!stdout.trim()) return `sem matches para ${JSON.stringify(pattern)} em ${target}`;
+    if (!stdout.trim()) return `no matches for ${JSON.stringify(pattern)} in ${target}`;
     return stdout;
   } catch (e) {
     const err = e as { code?: number; stdout?: string };
-    if (err.code === 1) return `sem matches para ${JSON.stringify(pattern)} em ${target}`;
+    if (err.code === 1) return `no matches for ${JSON.stringify(pattern)} in ${target}`;
     if (err.stdout) return err.stdout;
-    return `ERRO: ${(e as Error).message}`;
+    return `ERROR: ${(e as Error).message}`;
   }
 }
 
@@ -205,7 +205,7 @@ export async function web_fetch(args: ToolArgs): Promise<string> {
       headers: { "User-Agent": "Cloud-AI/0.1 (+vscode)" },
       redirect: "follow",
     });
-    if (!r.ok) return `ERRO ao buscar ${url}: HTTP ${r.status}`;
+    if (!r.ok) return `ERROR fetching ${url}: HTTP ${r.status}`;
     const ct = r.headers.get("content-type") ?? "";
     let text = await r.text();
     if (ct.includes("html")) {
@@ -224,7 +224,7 @@ export async function web_fetch(args: ToolArgs): Promise<string> {
     if (text.length > maxChars) text = text.slice(0, maxChars) + `\n[...truncated at ${maxChars} chars]`;
     return `# ${url}\n${text}`;
   } catch (e) {
-    return `ERRO ao buscar ${url}: ${(e as Error).message}`;
+    return `ERROR fetching ${url}: ${(e as Error).message}`;
   }
 }
 
@@ -274,7 +274,7 @@ export async function todo_write(args: ToolArgs): Promise<string> {
   const valid = new Set(["pending", "in_progress", "completed"]);
   const cleaned: typeof _todos = [];
   for (const it of items) {
-    if (!valid.has(it.status ?? "")) return `ERRO: status inválido ${JSON.stringify(it.status)}`;
+    if (!valid.has(it.status ?? "")) return `ERROR: invalid status ${JSON.stringify(it.status)}`;
     cleaned.push({
       content: it.content ?? "",
       activeForm: it.activeForm ?? "",
@@ -283,7 +283,7 @@ export async function todo_write(args: ToolArgs): Promise<string> {
   }
   _todos = cleaned;
   const done = _todos.filter((t) => t.status === "completed").length;
-  return `OK: ${_todos.length} todos (${done} concluídos)`;
+  return `OK: ${_todos.length} todos (${done} completed)`;
 }
 
 export function getTodos() {
@@ -302,7 +302,7 @@ export async function memory_write(args: ToolArgs): Promise<string> {
   await fs.mkdir(dir, { recursive: true });
   const p = path.join(dir, `${name}.md`);
   await fs.writeFile(p, content, "utf8");
-  return `OK: memória '${name}' salva em ${p}`;
+  return `OK: memory '${name}' saved to ${p}`;
 }
 
 export async function memory_read(args: ToolArgs): Promise<string> {
@@ -311,22 +311,22 @@ export async function memory_read(args: ToolArgs): Promise<string> {
   if (!name) {
     try {
       const items = (await fs.readdir(dir)).filter((f) => f.endsWith(".md")).sort();
-      if (items.length === 0) return "(nenhuma memória salva ainda)";
-      return "memórias:\n" + items.map((f) => `  • ${f.replace(/\.md$/, "")}`).join("\n");
+      if (items.length === 0) return "(no memories saved yet)";
+      return "memories:\n" + items.map((f) => `  • ${f.replace(/\.md$/, "")}`).join("\n");
     } catch {
-      return "(nenhuma memória salva ainda)";
+      return "(no memories saved yet)";
     }
   }
   const p = path.join(dir, `${name.replace(/\//g, "_")}.md`);
   try {
     const text = await fs.readFile(p, "utf8");
-    return `# memória: ${name}\n${text}`;
+    return `# memory: ${name}\n${text}`;
   } catch {
-    return `ERRO: memória '${name}' não existe`;
+    return `ERROR: memory '${name}' does not exist`;
   }
 }
 
-// ─── Dispatch & categorização ─────────────────────────────────────────────
+// ─── Dispatch and categories ─────────────────────────────────────────────
 export const DISPATCH: Record<string, (args: ToolArgs) => Promise<string>> = {
   read_file,
   write_file,
@@ -382,10 +382,10 @@ export function bashDangerLevel(command: string): "safe" | "caution" | "dangerou
 
 export async function execute(name: string, args: ToolArgs): Promise<string> {
   const fn = DISPATCH[name];
-  if (!fn) return `ERRO: ferramenta desconhecida: ${name}`;
+  if (!fn) return `ERROR: unknown tool: ${name}`;
   try {
     return await fn(args);
   } catch (e) {
-    return `ERRO ao executar ${name}: ${(e as Error).message}`;
+    return `ERROR running ${name}: ${(e as Error).message}`;
   }
 }

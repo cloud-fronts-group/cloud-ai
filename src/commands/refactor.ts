@@ -7,14 +7,14 @@ export async function refactorSelection(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
-    vscode.window.showWarningMessage("Cloud: selecione código primeiro.");
+    vscode.window.showWarningMessage(vscode.l10n.t("Cloud: select some code first."));
     return;
   }
 
   const instruction = await vscode.window.showInputBox({
     title: "Cloud Refactor",
-    prompt: "O que mudar?",
-    placeHolder: "ex.: extrai função pura · renomeia x para userId · usa async/await",
+    prompt: vscode.l10n.t("What should change?"),
+    placeHolder: vscode.l10n.t("e.g. extract a pure function · rename x to userId · use async/await"),
     ignoreFocusOut: true,
   });
   if (!instruction) return;
@@ -23,12 +23,12 @@ export async function refactorSelection(
   const langId = editor.document.languageId;
 
   const prompt =
-    `Refatora o código abaixo (${langId}). Instrução: ${instruction}\n\n` +
-    `Regras estritas:\n` +
-    `- Devolve APENAS o código novo, sem markdown, sem fences, sem prosa.\n` +
-    `- Mantém exatamente a indentação inicial da seleção.\n` +
-    `- Não inventes APIs nem imports que não estavam.\n\n` +
-    `<código>\n${selected}\n</código>`;
+    `Refactor the code below (${langId}). Instruction: ${instruction}\n\n` +
+    `Strict rules:\n` +
+    `- Return ONLY the new code: no Markdown, no fences, no prose.\n` +
+    `- Keep exactly the starting indentation of the selection.\n` +
+    `- Do not invent APIs or imports that were not there.\n\n` +
+    `<code>\n${selected}\n</code>`;
 
   const ctrl = new AbortController();
   let buffer = "";
@@ -36,7 +36,7 @@ export async function refactorSelection(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: "Cloud: refatorando…",
+      title: vscode.l10n.t("Cloud: refactoring…"),
       cancellable: true,
     },
     async (_p, token) => {
