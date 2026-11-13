@@ -14,6 +14,8 @@ import { PermissionState, askPermission } from "./tools/permissions";
 export interface InboundMessage {
   type: "send" | "stop" | "clear" | "ready" | "toggleTools";
   text?: string;
+  /** data: URL of an attached image (send only) */
+  image?: string;
   toolsEnabled?: boolean;
 }
 
@@ -44,6 +46,8 @@ export interface OutboundMessage {
 const HISTORY_KEY = "cloud.chatHistory.v1";
 const MAX_PERSIST_MESSAGES = 200;
 const MAX_TOOL_LOOP_TURNS = 10;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const IMAGE_URL = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 
 /**
  * Chat logic (history, tool loop, slash commands, persistence), shared by the
@@ -109,16 +113,27 @@ export class ChatRuntime {
         return;
       }
       case "send": {
-        const text = (msg.text ?? "").trim();
+        let text = (msg.text ?? "").trim();
+        const image = msg.image;
+        if (image !== undefined) {
+          if (!IMAGE_URL.test(image) || image.length * 0.75 > MAX_IMAGE_BYTES) {
+            this.post({
+              type: "error",
+              data: vscode.l10n.t("The image must be a PNG, JPEG, WebP or GIF of at most 8 MB."),
+            });
+            return;
+          }
+          if (!text) text = vscode.l10n.t("Describe this image.");
+        }
         if (!text) return;
-        await this.send(text);
+        await this.send(text, image);
         return;
       }
     }
   }
 
-  private async send(text: string): Promise<void> {
-    if (this.handleBuiltinSlash(text)) return;
+  private async send(text: string, image?: string): Promise<void> {
+    if (!image && this.handleBuiltinSlash(text)) return;
 
     const parsed = parseSlashCommand(text, this.skills);
     let userContent = text;
@@ -129,11 +144,14 @@ export class ChatRuntime {
     }
 
     this.history.push({ role: "user", content: userContent });
-    this.post({ type: "userEcho", data: text });
+    this.post({ type: "userEcho", data: text, meta: image ? { image } : undefined });
 
     try {
       for (let turn = 0; turn < MAX_TOOL_LOOP_TURNS; turn++) {
-        const result = await this.runOneTurn();
+        // The image goes with the first request only. It is not kept in the
+        // history: the backend attaches it to the last user message, and image
+        // turns run without tools, so there is no second request to resend it on.
+        const result = await this.runOneTurn(turn === 0 ? image : undefined);
         if (!result.ok) return;
         if (!result.toolCalls.length) {
           this.post({ type: "done" });
@@ -181,7 +199,7 @@ export class ChatRuntime {
     return false;
   }
 
-  private async runOneTurn(): Promise<{
+  private async runOneTurn(image?: string): Promise<{
     ok: boolean;
     toolCalls: PendingToolCall[];
   }> {
@@ -199,6 +217,7 @@ export class ChatRuntime {
       for await (const ev of streamChat(getConfig(), {
         messages: messagesToSend,
         toolsEnabled: getConfig().toolsEnabled,
+        imageDataB64: image,
         signal: this.currentCtrl.signal,
       })) {
         if (ev.event === "route") {
@@ -344,8 +363,14 @@ export function renderHtml(
     </div>
   </header>
   <main id="messages" class="messages"></main>
+  <div id="attachment" class="attachment" hidden>
+    <img id="thumb" alt="" />
+    <button id="detach" title="${esc(vscode.l10n.t("Remove the image"))}">✕</button>
+  </div>
   <footer class="composer">
     <textarea id="input" rows="2" placeholder="${esc(vscode.l10n.t("Message… (/skills lists skills, Enter sends)"))}"></textarea>
+    <button id="attach" title="${esc(vscode.l10n.t("Attach an image (or paste one)"))}">📎</button>
+    <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
     <button id="mic" hidden title="Voice input (Web Speech)">🎙</button>
     <button id="send" title="${esc(vscode.l10n.t("Send (Enter)"))}">▶</button>
     <button id="stop" hidden title="${esc(vscode.l10n.t("Stop generating"))}">■</button>

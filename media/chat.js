@@ -10,6 +10,41 @@
   const $route = document.getElementById("route");
   const $tools = /** @type {HTMLInputElement} */ (document.getElementById("tools"));
   const $mic = document.getElementById("mic");
+  const $attach = document.getElementById("attach");
+  const $file = /** @type {HTMLInputElement} */ (document.getElementById("file"));
+  const $attachment = document.getElementById("attachment");
+  const $thumb = /** @type {HTMLImageElement} */ (document.getElementById("thumb"));
+  const $detach = document.getElementById("detach");
+
+  /** @type {string | null} data: URL of the image waiting to be sent */
+  let pendingImage = null;
+
+  function setImage(dataUrl) {
+    pendingImage = dataUrl;
+    $attachment.hidden = !dataUrl;
+    if (dataUrl) $thumb.src = dataUrl;
+    else $thumb.removeAttribute("src");
+  }
+
+  function readImage(file) {
+    if (!file || !/^image\/(png|jpeg|webp|gif)$/.test(file.type)) return;
+    const fr = new FileReader();
+    fr.onload = () => setImage(String(fr.result));
+    fr.readAsDataURL(file);
+  }
+
+  $attach.addEventListener("click", () => $file.click());
+  $file.addEventListener("change", () => {
+    readImage($file.files && $file.files[0]);
+    $file.value = "";
+  });
+  $detach.addEventListener("click", () => setImage(null));
+  $input.addEventListener("paste", (e) => {
+    const item = [...(e.clipboardData ? e.clipboardData.items : [])].find((i) => i.type.startsWith("image/"));
+    if (!item) return;
+    e.preventDefault();
+    readImage(item.getAsFile());
+  });
 
   let currentAssistant = null;
   let assistantRaw = "";
@@ -36,8 +71,9 @@
 
   function doSend() {
     const text = $input.value.trim();
-    if (!text) return;
-    vscode.postMessage({ type: "send", text });
+    if (!text && !pendingImage) return;
+    vscode.postMessage(pendingImage ? { type: "send", text, image: pendingImage } : { type: "send", text });
+    setImage(null);
     $input.value = "";
     autoSize();
   }
@@ -230,10 +266,17 @@
           }
         }
         break;
-      case "userEcho":
-        addBubble("user", m.data);
+      case "userEcho": {
+        const bubble = addBubble("user", m.data);
+        if (m.meta && typeof m.meta.image === "string" && m.meta.image.startsWith("data:image/")) {
+          const img = document.createElement("img");
+          img.className = "attached";
+          img.src = m.meta.image;
+          bubble.prepend(img);
+        }
         startAssistantTurn();
         break;
+      }
       case "route":
         if (m.meta && m.meta.backend) {
           const tools = m.meta.tools_enabled ? " · tools" : "";
