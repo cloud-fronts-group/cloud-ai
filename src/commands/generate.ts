@@ -7,14 +7,14 @@ export async function generateAtCursor(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    vscode.window.showWarningMessage("Cloud: abre um arquivo primeiro.");
+    vscode.window.showWarningMessage(vscode.l10n.t("Cloud: open a file first."));
     return;
   }
 
   const instruction = await vscode.window.showInputBox({
     title: "Cloud Generate",
-    prompt: "O que gerar no cursor?",
-    placeHolder: "ex.: função pra debounce · teste pytest pra UserService.create",
+    prompt: vscode.l10n.t("What should be generated at the cursor?"),
+    placeHolder: vscode.l10n.t("e.g. a debounce function · a pytest test for UserService.create"),
     ignoreFocusOut: true,
   });
   if (!instruction) return;
@@ -22,7 +22,7 @@ export async function generateAtCursor(
   const langId = editor.document.languageId;
   const cursorPos = editor.selection.active;
 
-  // Pega 80 linhas de contexto antes do cursor pra dar pista do estilo
+  // 80 lines before the cursor, as a style hint
   const startLine = Math.max(0, cursorPos.line - 80);
   const ctxRange = new vscode.Range(
     new vscode.Position(startLine, 0),
@@ -31,12 +31,12 @@ export async function generateAtCursor(
   const fileContext = editor.document.getText(ctxRange);
 
   const prompt =
-    `Gera código ${langId} para inserir na posição atual do cursor.\n` +
-    `Instrução: ${instruction}\n\n` +
-    `Regras estritas:\n` +
-    `- Devolve APENAS o código, sem markdown, sem fences, sem prosa.\n` +
-    `- Mantém indentação coerente com o contexto.\n` +
-    `- Não dupliques imports já presentes no contexto.`;
+    `Generate ${langId} code to insert at the current cursor position.\n` +
+    `Instruction: ${instruction}\n\n` +
+    `Strict rules:\n` +
+    `- Return ONLY the code: no Markdown, no fences, no prose.\n` +
+    `- Keep the indentation consistent with the context.\n` +
+    `- Do not repeat imports already present in the context.`;
 
   const ctrl = new AbortController();
   let buffer = "";
@@ -44,7 +44,7 @@ export async function generateAtCursor(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: "Cloud: gerando…",
+      title: vscode.l10n.t("Cloud: generating…"),
       cancellable: true,
     },
     async (_p, token) => {
@@ -78,7 +78,7 @@ export async function generateAtCursor(
   const edit = new vscode.WorkspaceEdit();
   edit.insert(editor.document.uri, cursorPos, cleaned);
   const ok = await vscode.workspace.applyEdit(edit);
-  if (!ok) vscode.window.showErrorMessage("Cloud: insert falhou.");
+  if (!ok) vscode.window.showErrorMessage(vscode.l10n.t("Cloud: the insert failed."));
 }
 
 function stripFences(s: string): string {

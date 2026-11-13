@@ -28,7 +28,7 @@ export class StatusBar {
     const cfg = getConfig();
     if (!cfg.tunnelUrl || !cfg.token) {
       this.item.text = "$(circle-slash) Cloud";
-      this.item.tooltip = "Configure cloud.tunnelUrl e cloud.token";
+      this.item.tooltip = vscode.l10n.t("Set cloud.tunnelUrl and cloud.token");
       return;
     }
     try {
@@ -36,8 +36,19 @@ export class StatusBar {
       const vramPct = Math.round(
         (h.gpu.vram_used_mb / h.gpu.vram_total_mb) * 100,
       );
-      this.item.text = `$(pulse) Cloud ${vramPct}%`;
+      const loading = h.status === "loading";
+      this.item.text = loading
+        ? "$(loading~spin) Cloud"
+        : h.status === "ok"
+          ? `$(pulse) Cloud ${vramPct}%`
+          : `$(warning) Cloud ${vramPct}%`;
       this.item.tooltip =
+        (loading
+          ? vscode.l10n.t("The model is still loading. The first start can take several minutes.") + "\n"
+          : h.status === "ok"
+            ? ""
+            : `status: ${h.status}\n`) +
+        `${h.routing}\n` +
         `${h.gpu.name}\n` +
         `VRAM ${h.gpu.vram_used_mb}/${h.gpu.vram_total_mb} MB (${vramPct}%)\n` +
         `Util ${h.gpu.gpu_util_pct}%  ·  ${h.gpu.temp_c}°C\n` +

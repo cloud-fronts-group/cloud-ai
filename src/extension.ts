@@ -79,7 +79,7 @@ async function healthCheck(): Promise<void> {
       (h.gpu.vram_used_mb / h.gpu.vram_total_mb) * 100,
     );
     vscode.window.showInformationMessage(
-      `Cloud ok · ${h.gpu.name} · VRAM ${vramPct}% · code=${h.models.code ?? "—"}`,
+      `Cloud ${h.status} · ${h.gpu.name} · VRAM ${vramPct}% · code=${h.models.code ?? "—"}`,
     );
   } catch (e) {
     vscode.window.showErrorMessage(`Cloud offline: ${(e as Error).message}`);

@@ -1,0 +1,9 @@
+{
+  "config.tunnelUrl": "URL of the backend tunnel (e.g. https://xxx.trycloudflare.com)",
+  "config.token": "Bearer token (CLOUD_TOKEN). Be careful with Settings Sync.",
+  "config.toolsEnabled": "Let the model call tools (read_file/write_file/edit_file/bash/glob/grep)",
+  "config.healthPollSeconds": "How often the status bar polls /health, in seconds",
+  "config.search.provider": "Backend for the web_search tool. duckduckgo needs no key but is scraped and can break; brave and searxng use an API.",
+  "config.search.apiKey": "Brave Search API key (provider = brave). Not synced safely: prefer user settings.",
+  "config.search.url": "Base URL of a SearXNG instance with format=json enabled (provider = searxng)."
+}

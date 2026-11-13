@@ -10,6 +10,41 @@
   const $route = document.getElementById("route");
   const $tools = /** @type {HTMLInputElement} */ (document.getElementById("tools"));
   const $mic = document.getElementById("mic");
+  const $attach = document.getElementById("attach");
+  const $file = /** @type {HTMLInputElement} */ (document.getElementById("file"));
+  const $attachment = document.getElementById("attachment");
+  const $thumb = /** @type {HTMLImageElement} */ (document.getElementById("thumb"));
+  const $detach = document.getElementById("detach");
+
+  /** @type {string | null} data: URL of the image waiting to be sent */
+  let pendingImage = null;
+
+  function setImage(dataUrl) {
+    pendingImage = dataUrl;
+    $attachment.hidden = !dataUrl;
+    if (dataUrl) $thumb.src = dataUrl;
+    else $thumb.removeAttribute("src");
+  }
+
+  function readImage(file) {
+    if (!file || !/^image\/(png|jpeg|webp|gif)$/.test(file.type)) return;
+    const fr = new FileReader();
+    fr.onload = () => setImage(String(fr.result));
+    fr.readAsDataURL(file);
+  }
+
+  $attach.addEventListener("click", () => $file.click());
+  $file.addEventListener("change", () => {
+    readImage($file.files && $file.files[0]);
+    $file.value = "";
+  });
+  $detach.addEventListener("click", () => setImage(null));
+  $input.addEventListener("paste", (e) => {
+    const item = [...(e.clipboardData ? e.clipboardData.items : [])].find((i) => i.type.startsWith("image/"));
+    if (!item) return;
+    e.preventDefault();
+    readImage(item.getAsFile());
+  });
 
   let currentAssistant = null;
   let assistantRaw = "";
@@ -36,8 +71,9 @@
 
   function doSend() {
     const text = $input.value.trim();
-    if (!text) return;
-    vscode.postMessage({ type: "send", text });
+    if (!text && !pendingImage) return;
+    vscode.postMessage(pendingImage ? { type: "send", text, image: pendingImage } : { type: "send", text });
+    setImage(null);
     $input.value = "";
     autoSize();
   }
@@ -84,7 +120,7 @@
       const compact = JSON.stringify(parsed);
       argPreview = compact.length > 200 ? compact.slice(0, 200) + "…" : compact;
     } catch {
-      // mantém raw
+      // keep the raw text
     }
     el.innerHTML =
       `<span class="tool-icon">🔧</span> <span class="tool-name">${escapeHtml(name)}</span>` +
@@ -95,11 +131,11 @@
 
   function addToolResultBubble(name, content) {
     const el = document.createElement("div");
-    const isError = content.startsWith("ERRO");
+    const isError = content.startsWith("ERROR");
     el.className = "bubble tool-result" + (isError ? " tool-error" : "");
     const icon = isError ? "✗" : "✓";
     const truncated =
-      content.length > 1500 ? content.slice(0, 1500) + "\n[…truncado]" : content;
+      content.length > 1500 ? content.slice(0, 1500) + "\n[…truncated]" : content;
     el.innerHTML =
       `<span class="tool-icon">${icon}</span> <span class="tool-name">${escapeHtml(name)}</span>` +
       `<pre class="tool-args"><code>${escapeHtml(truncated)}</code></pre>`;
@@ -145,7 +181,7 @@
       if (assistantRaw) {
         currentAssistant.innerHTML = renderMarkdown(assistantRaw);
       } else {
-        // Bubble vazio (modelo só pediu tool sem texto) — remove
+        // Empty bubble (the model only asked for a tool): remove it
         currentAssistant.remove();
       }
     }
@@ -206,7 +242,7 @@
     });
   }
 
-  // ─── Mensagens vindas do extension host ────────────────────────────
+  // ─── Messages from the extension host ────────────────────────────
   window.addEventListener("message", (event) => {
     const m = event.data;
     switch (m.type) {
@@ -230,10 +266,17 @@
           }
         }
         break;
-      case "userEcho":
-        addBubble("user", m.data);
+      case "userEcho": {
+        const bubble = addBubble("user", m.data);
+        if (m.meta && typeof m.meta.image === "string" && m.meta.image.startsWith("data:image/")) {
+          const img = document.createElement("img");
+          img.className = "attached";
+          img.src = m.meta.image;
+          bubble.prepend(img);
+        }
         startAssistantTurn();
         break;
+      }
       case "route":
         if (m.meta && m.meta.backend) {
           const tools = m.meta.tools_enabled ? " · tools" : "";
@@ -247,7 +290,7 @@
         $messages.scrollTop = $messages.scrollHeight;
         break;
       case "toolCall": {
-        // Encerra qualquer bolha de texto pendente, mostra a tool call.
+        // Close any open text bubble, then show the tool call.
         removeThinkingBubble();
         endCurrentBubble();
         try {
@@ -272,7 +315,7 @@
         break;
       case "error":
         endAssistantTurn();
-        addBubble("error", "erro: " + m.data);
+        addBubble("error", "error: " + m.data);
         break;
       case "reset":
         $messages.innerHTML = "";

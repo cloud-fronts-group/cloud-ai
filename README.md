@@ -84,15 +84,13 @@ Type `/skills` or `/help` in the chat to list all 14 with descriptions.
 
 ## Quick start
 
-1. **Install** — download the latest `cloud-ai-*.vsix` from this repository's [Releases](https://github.com/cloud-fronts-group/cloud-ai/releases) (or build it yourself: `npm install && npm run package`), then:
-   ```bash
-   code --install-extension cloud-ai-0.5.0.vsix
-   ```
+1. **Install** — from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=cloud-fronts-group.cloud-ai) (`code --install-extension cloud-fronts-group.cloud-ai`), or download `cloud-ai-*.vsix` from this repository's [Releases](https://github.com/cloud-fronts-group/cloud-ai/releases) (or build it yourself: `npm install && npm run package`) and run `code --install-extension cloud-ai-<version>.vsix`.
 2. **Spin up the backend** — open [`backend/cloud_colab.ipynb`](backend/cloud_colab.ipynb) in Colab ([one-click](https://colab.research.google.com/github/cloud-fronts-group/cloud-ai/blob/main/backend/cloud_colab.ipynb)), pick a GPU runtime and run all cells. The last cell prints:
    ```
    CLOUD_URL=https://xxxxx.trycloudflare.com
    CLOUD_TOKEN=...
    ```
+   To serve a model with **Unsloth** instead of Ollama (a Hub model, or a LoRA adapter you fine-tuned), use [`backend/cloud_colab_unsloth.ipynb`](backend/cloud_colab_unsloth.ipynb), or from a terminal with the [Colab CLI](https://github.com/googlecolab/google-colab-cli): `backend/colab_up.sh`. See [`backend/README.md`](backend/README.md#unsloth-backend).
 3. **Configure VS Code** — open Settings → search "Cloud AI":
    - `cloud.tunnelUrl` → the Cloudflared URL
    - `cloud.token` → the token
@@ -101,7 +99,7 @@ Type `/skills` or `/help` in the chat to list all 14 with descriptions.
 
 ### Running the backend somewhere other than Colab
 
-The backend is a small FastAPI server over Ollama — see [`backend/README.md`](backend/README.md). Any machine with Ollama works:
+The backend is a small FastAPI server over Ollama (or, with `CLOUD_BACKEND=unsloth`, an in-process Unsloth model on port 7654) — see [`backend/README.md`](backend/README.md). Any machine with Ollama works:
 
 ```bash
 pip install -r backend/requirements.txt
@@ -118,6 +116,13 @@ It also documents the wire protocol (`/health`, `/vibe/ask`, `/vibe/chat` over S
 | `cloud.token` | `""` | Bearer token sent on every request (machine-scoped, doesn't sync) |
 | `cloud.toolsEnabled` | `false` | Allow the model to call tools (file I/O, bash, web) |
 | `cloud.healthPollSeconds` | `10` | How often to poll `/health` for the status bar |
+| `cloud.search.provider` | `duckduckgo` | Backend of the `web_search` tool: `duckduckgo` (no key, scraped), `brave` or `searxng` |
+| `cloud.search.apiKey` | `""` | Brave Search API key, when the provider is `brave` |
+| `cloud.search.url` | `""` | Base URL of a SearXNG instance with JSON output, when the provider is `searxng` |
+
+The UI is in English, with a Brazilian Portuguese bundle that VS Code picks up from your display language.
+
+To attach an image, click the paperclip in the chat box or paste one (PNG, JPEG, WebP or GIF, up to 8 MB). The turn is routed to the vision model.
 
 ## Keybindings
 
@@ -144,7 +149,8 @@ It also documents the wire protocol (`/health`, `/vibe/ask`, `/vibe/chat` over S
 ## Limitations
 
 - Needs a Colab Pro account (or another GPU host) to run the backend. The extension does not include hosted inference.
-- The Cloudflared tunnel URL changes when Colab restarts — you must update the setting (the extension shows a clear error when it's offline).
+- The Cloudflared quick-tunnel URL changes when Colab restarts — you must update the setting (the extension shows a clear error when it's offline). A named tunnel on a fixed hostname avoids this: see [`backend/README.md`](backend/README.md#unsloth-backend).
+- The backend never listens on port 8000. Defaults are 7655 (Ollama router) and 7654 (Unsloth router).
 - AI Engineering skills generate code; they don't run training/RAG/eval pipelines for you. They tell you **what** to write and **why**.
 
 ## Development
@@ -154,8 +160,19 @@ npm install            # esbuild + TypeScript + vsce, no runtime dependencies
 npm run typecheck      # tsc --noEmit
 npm run build          # bundles src/ -> dist/extension.js
 npm run package        # produces cloud-ai-<version>.vsix
-npm run test:backend   # protocol smoke test against a mock Ollama (needs backend/requirements.txt)
+npm run test:backend   # protocol smoke tests: mock Ollama, then the Unsloth path with canned output (needs backend/requirements.txt)
 ```
+
+### Releasing
+
+Publishing is automatic and uses Marketplace **Trusted Publishing** (GitHub OIDC); no token is stored.
+
+```bash
+npm version 0.6.1 --no-git-tag-version   # must be higher than the version on the Marketplace
+git commit -am "Release 0.6.1" && git tag v0.6.1 && git push origin main v0.6.1
+```
+
+The tag starts [`.github/workflows/publish.yml`](.github/workflows/publish.yml): it type-checks, runs the backend tests, checks the version and the Marketplace keywords, packages the VSIX, creates the GitHub release with the VSIX attached, and runs `vsce publish --oidc` in the `production` environment. The Marketplace policy (publisher `cloud-fronts-group` → Trusted Publishing) names this repository, the file `publish.yml` and the environment `production`: renaming any of them breaks publishing.
 
 Press **F5** in VS Code to launch an Extension Development Host with the extension loaded.
 

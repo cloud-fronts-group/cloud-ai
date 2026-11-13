@@ -43,6 +43,7 @@
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
+  "l10n": "./l10n",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -127,23 +128,43 @@
         "cloud.tunnelUrl": {
           "type": "string",
           "default": "",
-          "description": "URL do tunnel Cloudflared do Colab (ex.: https://xxx.trycloudflare.com)"
+          "description": "%config.tunnelUrl%"
         },
         "cloud.token": {
           "type": "string",
           "default": "",
-          "description": "Bearer token (CLOUD_TOKEN). Use Settings Sync com cuidado.",
+          "description": "%config.token%",
           "scope": "machine"
         },
         "cloud.toolsEnabled": {
           "type": "boolean",
           "default": false,
-          "description": "Permite o modelo chamar tools (read_file/write_file/edit_file/bash/glob/grep)"
+          "description": "%config.toolsEnabled%"
         },
         "cloud.healthPollSeconds": {
           "type": "number",
           "default": 10,
-          "description": "Intervalo de polling do /health pro status bar"
+          "description": "%config.healthPollSeconds%"
+        },
+        "cloud.search.provider": {
+          "type": "string",
+          "enum": [
+            "duckduckgo",
+            "brave",
+            "searxng"
+          ],
+          "default": "duckduckgo",
+          "description": "%config.search.provider%"
+        },
+        "cloud.search.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%config.search.apiKey%"
+        },
+        "cloud.search.url": {
+          "type": "string",
+          "default": "",
+          "description": "%config.search.url%"
         }
       }
     }
@@ -154,13 +175,16 @@
     "watch": "node esbuild.config.mjs --watch",
     "typecheck": "tsc --noEmit",
     "package": "vsce package --no-dependencies",
-    "test:backend": "python3 backend/tests/smoke_test.py"
+    "test:backend": "python3 backend/tests/smoke_test.py && python3 backend/tests/smoke_test_unsloth.py"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@types/vscode": "^1.95.0",
-    "@vscode/vsce": "^4.1.0",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.1",
     "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "minimatch": "^11.0.8"
   }
 }

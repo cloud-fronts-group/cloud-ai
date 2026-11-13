@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { CloudConfig, assertConfigured } from "./config";
 
 export interface RouteEvent {
@@ -44,9 +45,11 @@ function explainNetworkError(err: unknown, cfg: CloudConfig): Error {
     );
   if (!isNetwork) return err instanceof Error ? err : new Error(msg);
   return new Error(
-    `Backend offline (${host}). Tunnel Cloudflared do Colab caiu ou expirou. ` +
-      `Re-rode a célula do cloudflared no Colab, copie a nova URL, e cole em ` +
-      `Settings → Cloud AI → Tunnel Url. [cause: ${msg}]`,
+    vscode.l10n.t(
+      "Backend offline ({0}). The Colab tunnel dropped or expired. Start it again on Colab, copy the new URL and paste it into Settings → Cloud AI → Tunnel Url. [cause: {1}]",
+      host,
+      msg,
+    ),
   );
 }
 

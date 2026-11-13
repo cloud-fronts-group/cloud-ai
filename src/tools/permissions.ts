@@ -39,15 +39,15 @@ function previewArgs(name: string, args: ToolArgs): string {
 function bashWarning(cmd: string): string | null {
   const level = bashDangerLevel(cmd);
   if (level === "dangerous")
-    return "⛔ COMANDO PERIGOSO detectado (rm -rf /, dd, fork bomb, mkfs, shutdown).";
+    return "⛔ " + vscode.l10n.t("DANGEROUS COMMAND detected (rm -rf /, dd, fork bomb, mkfs, shutdown).");
   if (level === "caution")
-    return "⚠ comando requer atenção (sudo, rm, force push, kill -9).";
+    return "⚠ " + vscode.l10n.t("This command needs care (sudo, rm, force push, kill -9).");
   return null;
 }
 
 /**
- * Pergunta permissão ao usuário via modal. Retorna true se autorizado.
- * Para tools safe, retorna true imediatamente sem prompt.
+ * Ask the user for permission in a modal. Returns true when allowed.
+ * Safe tools return true at once, with no prompt.
  */
 export async function askPermission(
   state: PermissionState,
@@ -75,7 +75,7 @@ export async function askPermission(
   buttons.push("Deny");
 
   const choice = await vscode.window.showWarningMessage(
-    `Cloud AI quer executar: ${name}`,
+    vscode.l10n.t("Cloud AI wants to run: {0}", name),
     { modal: true, detail },
     ...buttons,
   );
@@ -87,18 +87,18 @@ export async function askPermission(
       if (firstWord) {
         state.alwaysAllowedBashPrefixes.add(firstWord);
         vscode.window.setStatusBarMessage(
-          `Cloud: 'bash ${firstWord} …' sempre permitido nesta sessão`,
+          vscode.l10n.t("Cloud: 'bash {0} …' is always allowed in this session", firstWord),
           5000,
         );
       }
     } else {
       state.alwaysAllowedTools.add(name);
       vscode.window.setStatusBarMessage(
-        `Cloud: '${name}' sempre permitido nesta sessão`,
+        vscode.l10n.t("Cloud: '{0}' is always allowed in this session", name),
         5000,
       );
     }
     return true;
   }
-  return false; // Deny ou modal fechado
+  return false; // Deny, or the modal was closed
 }

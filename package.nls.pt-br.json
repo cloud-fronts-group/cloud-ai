@@ -1,0 +1,9 @@
+{
+  "config.tunnelUrl": "URL do tunnel Cloudflared do Colab (ex.: https://xxx.trycloudflare.com)",
+  "config.token": "Bearer token (CLOUD_TOKEN). Use Settings Sync com cuidado.",
+  "config.toolsEnabled": "Permite o modelo chamar tools (read_file/write_file/edit_file/bash/glob/grep)",
+  "config.healthPollSeconds": "Intervalo de polling do /health pro status bar",
+  "config.search.provider": "Backend da ferramenta web_search. duckduckgo não precisa de chave, mas depende de scraping e pode quebrar; brave e searxng usam API.",
+  "config.search.apiKey": "Chave da Brave Search API (provider = brave).",
+  "config.search.url": "URL base de uma instância SearXNG com format=json habilitado (provider = searxng)."
+}
