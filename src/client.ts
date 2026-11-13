@@ -2,7 +2,7 @@ import { CloudConfig, assertConfigured } from "./config";
 
 export interface RouteEvent {
   role: "code" | "vision" | "agentic";
-  backend: "ollama" | "openrouter" | "opencode_zen";
+  backend: "ollama" | "unsloth" | "openrouter" | "opencode_zen";
   model: string;
   reason: string;
   tools_enabled?: boolean;

@@ -105,7 +105,7 @@ The backend is a small FastAPI server over Ollama — see [`backend/README.md`](
 
 ```bash
 pip install -r backend/requirements.txt
-CLOUD_TOKEN=change-me python backend/server.py      # then set cloud.tunnelUrl=http://localhost:8000
+CLOUD_TOKEN=change-me python backend/server.py      # then set cloud.tunnelUrl=http://localhost:7655
 ```
 
 It also documents the wire protocol (`/health`, `/vibe/ask`, `/vibe/chat` over SSE) if you want to point the extension at your own inference stack.

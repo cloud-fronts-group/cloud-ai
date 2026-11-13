@@ -2,6 +2,17 @@
 
 All notable changes to this extension are documented in this file.
 
+## [Unreleased]
+
+### Added
+- Unsloth backend: `CLOUD_BACKEND=unsloth` makes `backend/server.py` load a Hub model or a saved LoRA adapter in-process (`backend/unsloth_engine.py`) instead of calling Ollama. Streams tokens and parses `<tool_call>` blocks into `tool_call` events. Image turns still use Ollama.
+- `backend/cloud_colab_unsloth.ipynb` and `backend/colab_up.sh`: start that backend on Colab from the browser or from a terminal with the Colab CLI. Drive is mounted with `colab drivemount`, which handles Colab's credential propagation; the notebook skips `drive.mount()` when Drive is already mounted.
+- `backend/tests/smoke_test_unsloth.py`, run in CI.
+
+### Changed
+- Default port is no longer 8000 (reserved for Evidently): `7655` for the Ollama router, `7654` with `CLOUD_BACKEND=unsloth`. `CLOUD_PORT=8000` is refused. Local users must update `cloud.tunnelUrl`.
+- `/health` can report `"status": "loading"` while the Unsloth model loads; the `route` event's `backend` can be `unsloth`.
+
 ## [0.5.0] — 2026-11-06
 
 ### Changed — renamed to Cloud AI

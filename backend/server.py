@@ -11,7 +11,9 @@ extension speaks (see ``src/client.ts``):
 
 Every request must carry ``Authorization: Bearer $CLOUD_TOKEN``.
 
-Inference runs on Ollama (``/api/chat`` streaming, with tools). When
+Inference runs on Ollama (``/api/chat`` streaming, with tools) or, with
+``CLOUD_BACKEND=unsloth``, on an Unsloth model loaded in this process (see
+``unsloth_engine.py``; image turns still go to Ollama). When
 ``CLOUD_FALLBACK_KEY`` is set, an OpenAI-compatible endpoint (OpenRouter by
 default) is used if Ollama cannot be reached or rejects the request.
 
@@ -20,7 +22,7 @@ executes every tool call locally, then posts the full transcript back.
 
 Run locally:
     CLOUD_TOKEN=secret python backend/server.py
-    # or: CLOUD_TOKEN=secret uvicorn server:app --host 0.0.0.0 --port 8000
+    # or: CLOUD_TOKEN=secret uvicorn server:app --host 0.0.0.0 --port 7655
 """
 from __future__ import annotations
 
@@ -53,12 +55,26 @@ def _with_scheme(host: str) -> str:
 
 TOKEN = _env("CLOUD_TOKEN") or secrets.token_urlsafe(24)
 HOST = _env("CLOUD_HOST", "0.0.0.0")
-PORT = int(_env("CLOUD_PORT", "8000"))
+
+BACKEND = _env("CLOUD_BACKEND", "ollama").lower()  # ollama | unsloth
+if BACKEND not in ("ollama", "unsloth"):
+    raise SystemExit(f"CLOUD_BACKEND must be 'ollama' or 'unsloth', got {BACKEND!r}")
 
 OLLAMA_HOST = _with_scheme(_env("OLLAMA_HOST", "http://127.0.0.1:11434")).rstrip("/")
-CODE_MODEL = _env("CLOUD_CODE_MODEL", "qwen3:30b")
 VISION_MODEL = _env("CLOUD_VISION_MODEL", "gemma3:27b")
-AGENTIC_MODEL = _env("CLOUD_AGENTIC_MODEL") or CODE_MODEL
+if BACKEND == "unsloth":
+    import unsloth_engine
+
+    # One model is loaded in-process and serves both the code and the agentic role.
+    CODE_MODEL = AGENTIC_MODEL = unsloth_engine.MODEL
+else:
+    unsloth_engine = None  # type: ignore[assignment]
+    CODE_MODEL = _env("CLOUD_CODE_MODEL", "qwen3:30b")
+    AGENTIC_MODEL = _env("CLOUD_AGENTIC_MODEL") or CODE_MODEL
+# 8000 is reserved for Evidently on our hosts: the Unsloth router takes 7654, everything else 7655 and up.
+PORT = int(_env("CLOUD_PORT", "7654" if BACKEND == "unsloth" else "7655"))
+if PORT == 8000:
+    raise SystemExit("CLOUD_PORT=8000 is reserved for Evidently; use 7654 (unsloth) or 7655+")
 NUM_CTX = int(_env("CLOUD_NUM_CTX", "16384"))
 TEMPERATURE = float(_env("CLOUD_TEMPERATURE", "0.2"))
 THINK = _env("CLOUD_THINK").lower()  # "" = model default, "0"/"1" = force off/on
@@ -214,14 +230,14 @@ def route(*, has_image: bool, tools_enabled: bool) -> dict[str, Any]:
     if tools_enabled:
         return {
             "role": "agentic",
-            "backend": "ollama",
+            "backend": BACKEND,
             "model": AGENTIC_MODEL,
             "reason": "tools enabled -> agentic model",
             "tools_enabled": True,
         }
     return {
         "role": "code",
-        "backend": "ollama",
+        "backend": BACKEND,
         "model": CODE_MODEL,
         "reason": "text only -> code model",
         "tools_enabled": False,
@@ -419,6 +435,21 @@ async def openai_stream(
         yield "tool_call", {"id": slot["id"] or _call_id(), "name": slot["name"], "arguments": slot["arguments"] or "{}"}
 
 
+def _think() -> bool | None:
+    return False if THINK in ("0", "false", "off") else True if THINK in ("1", "true", "on") else None
+
+
+async def unsloth_stream(
+    model: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None
+) -> AsyncIterator[tuple[str, Any]]:
+    """Same event contract as ollama_stream, served by the in-process Unsloth model."""
+    try:
+        async for ev in unsloth_engine.ENGINE.stream(messages, tools, temperature=TEMPERATURE, think=_think()):
+            yield ev
+    except Exception as e:  # noqa: BLE001
+        raise BackendError(f"unsloth ({model}): {type(e).__name__}: {e}") from e
+
+
 async def generate(
     rt: dict[str, Any],
     messages: list[dict[str, Any]],
@@ -430,7 +461,9 @@ async def generate(
     emitted = False
     try:
         try:
-            async for kind, data in ollama_stream(rt["model"], to_ollama_messages(messages, image_b64), tools):
+            primary = unsloth_stream if rt["backend"] == "unsloth" else ollama_stream
+            # Both take Ollama-shaped history: tool_calls[].function.arguments as an object.
+            async for kind, data in primary(rt["model"], to_ollama_messages(messages, image_b64), tools):
                 if await request.is_disconnected():
                     return
                 emitted = True
@@ -548,22 +581,30 @@ async def root() -> dict[str, Any]:
 @app.get("/health")
 async def health(_: None = Depends(auth)) -> dict[str, Any]:
     tags, gpu = await asyncio.gather(ollama_models(), asyncio.to_thread(gpu_stats))
-    if tags is not None:
+    engine = unsloth_engine.ENGINE if BACKEND == "unsloth" else None
+    if engine is not None and engine.state == "ready":
+        status = "ok"
+    elif engine is not None and engine.state in ("idle", "loading"):
+        status = "loading"
+    elif engine is None and tags is not None:
         status = "ok"
     elif FALLBACK_KEY:
         status = "ok-fallback"
     else:
         status = "degraded"
     routing = "image->vision · tools->agentic · else->code"
+    if engine is not None:
+        routing += f" · unsloth={engine.state}" + (f" ({engine.error[:200]})" if engine.error else "")
+    loaded = CODE_MODEL if engine is not None and engine.state == "ready" else None
     if FALLBACK_KEY:
         routing += f" · fallback={FALLBACK_NAME}/{FALLBACK_MODEL}"
     return {
         "status": status,
         "version": VERSION,
         "models": {
-            "code": _present(CODE_MODEL, tags),
+            "code": loaded if engine is not None else _present(CODE_MODEL, tags),
             "vision": _present(VISION_MODEL, tags),
-            "agentic": _present(AGENTIC_MODEL, tags),
+            "agentic": loaded if engine is not None else _present(AGENTIC_MODEL, tags),
         },
         "routing": routing,
         "gpu": gpu,
@@ -601,8 +642,10 @@ if __name__ == "__main__":
     if not _env("CLOUD_TOKEN"):
         print(f"[cloud] CLOUD_TOKEN not set — generated one for this run:\n[cloud] CLOUD_TOKEN={TOKEN}", flush=True)
     print(
-        f"[cloud] v{VERSION} · ollama={OLLAMA_HOST} · code={CODE_MODEL} · vision={VISION_MODEL} · "
+        f"[cloud] v{VERSION} · backend={BACKEND} · ollama={OLLAMA_HOST} · code={CODE_MODEL} · vision={VISION_MODEL} · "
         f"agentic={AGENTIC_MODEL} · fallback={'on:' + FALLBACK_NAME if FALLBACK_KEY else 'off'}",
         flush=True,
     )
+    if BACKEND == "unsloth":
+        unsloth_engine.ENGINE.load_in_background()  # /health answers "loading" meanwhile
     uvicorn.run(app, host=HOST, port=PORT, log_level=_env("CLOUD_LOG_LEVEL", "info"))
