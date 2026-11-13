@@ -34,3 +34,4 @@ jobs:
           python-version: "3.12"
       - run: pip install -r backend/requirements.txt
       - run: python backend/tests/smoke_test.py
+      - run: python backend/tests/smoke_test_unsloth.py
