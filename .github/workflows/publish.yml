@@ -7,12 +7,20 @@
 # environment and the policy stops matching.
 #
 # Release flow:  bump "version" in package.json  →  git tag vX.Y.Z  →  git push --tags
+# The tag builds, tests, creates the GitHub release with the VSIX and publishes it.
+#
+# Docs: https://code.visualstudio.com/api/working-with-extensions/publishing-extension#secure-automated-publishing-to-visual-studio-marketplace
+#       https://learn.microsoft.com/azure/devops/extend/publish/overview#publish-with-oidc-trusted-publishing
 name: Publish
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch: # manual re-run of a tag, e.g. after a transient Marketplace error
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -24,10 +32,44 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: npm ci
       - run: npm run typecheck
+      - run: pip install -r backend/requirements.txt
+      - run: npm run test:backend
+      - name: Version must be higher than the Marketplace's, and the listing keywords must be present
+        run: |
+          node - <<'EOF'
+          const pkg = require("./package.json");
+          const id = `${pkg.publisher}.${pkg.name}`;
+          // The listing must keep appearing in the Kubernetes extension's cloud-provider search.
+          for (const k of ["kubernetes-extension-cloud-provider"]) {
+            if (!(pkg.keywords || []).includes(k)) {
+              console.log(`::error::package.json keywords lack "${k}": publishing would drop the listing from that Marketplace search`);
+              process.exit(1);
+            }
+          }
+          const num = (v) => v.split("-")[0].split(".").map(Number);
+          const newer = (a, b) => { const [x, y] = [num(a), num(b)]; for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i]; return false; };
+          fetch("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", {
+            method: "POST",
+            headers: { Accept: "application/json;api-version=7.2-preview.1", "Content-Type": "application/json" },
+            body: JSON.stringify({ filters: [{ criteria: [{ filterType: 7, value: id }] }], flags: 1 }),
+          })
+            .then((r) => r.json())
+            .then((j) => {
+              const live = j.results?.[0]?.extensions?.[0]?.versions?.[0]?.version;
+              console.log(`package.json ${pkg.version} · Marketplace ${live ?? "(not published)"}`);
+              if (live && !newer(pkg.version, live)) {
+                console.log(`::error::${id} ${live} is already on the Marketplace; bump "version" above it`);
+                process.exit(1);
+              }
+            });
+          EOF
       - name: Tag must match package.json version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -65,8 +107,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: vsce publish (OIDC, no PAT)
         # Each GitHub OIDC token can be exchanged exactly once and the Marketplace
         # credential lives 15 minutes, so publish is the only step that uses it.
-        run: npx --yes @vscode/vsce@^4.1.0 publish --oidc --packagePath ./*.vsix
+        run: npx --yes @vscode/vsce@^4.1.1 publish --oidc --packagePath ./*.vsix

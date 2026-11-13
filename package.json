@@ -175,7 +175,7 @@
     "watch": "node esbuild.config.mjs --watch",
     "typecheck": "tsc --noEmit",
     "package": "vsce package --no-dependencies",
-    "test:backend": "python3 backend/tests/smoke_test.py"
+    "test:backend": "python3 backend/tests/smoke_test.py && python3 backend/tests/smoke_test_unsloth.py"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

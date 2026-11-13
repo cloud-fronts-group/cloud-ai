@@ -9,7 +9,16 @@ All notable changes to this extension are documented in this file.
 - `backend/cloud_colab_unsloth.ipynb` and `backend/colab_up.sh`: start that backend on Colab from the browser or from a terminal with the Colab CLI. Drive is mounted with `colab drivemount`, which handles Colab's credential propagation; the notebook skips `drive.mount()` when Drive is already mounted.
 - `backend/tests/smoke_test_unsloth.py`, run in CI.
 
+- Chat view: attach an image with the paperclip or by pasting. It is sent as `image_data` and routed to the vision model.
+- `web_search` providers: `cloud.search.provider` = `duckduckgo` (default), `brave` or `searxng`.
+- Colab launcher: `CLOUDFLARE_TUNNEL_TOKEN` + `CLOUD_PUBLIC_URL` for a fixed hostname through a named tunnel.
+- Status bar shows `loading` and degraded backend states.
+
 ### Changed
+- UI strings default to English; the original Portuguese is an l10n bundle (`l10n/bundle.l10n.pt-br.json`, `package.nls.pt-br.json`). Tool results and the Explain / Refactor / Generate prompts sent to the model are English.
+- `web_search` reports an unreadable DuckDuckGo page (bot check, changed markup) as an error instead of "no results".
+- `colab_start.py` no longer prints `CLOUD_TOKEN` unless `CLOUD_PRINT_TOKEN=1`; `colab_up.sh` downloads it to `~/.config/cloud-ai/<session>.token`.
+- `publish.yml` refuses to publish a version that is not higher than the Marketplace's, or a package without the `kubernetes-extension-cloud-provider` keyword.
 - Default port is no longer 8000 (reserved for Evidently): `7655` for the Ollama router, `7654` with `CLOUD_BACKEND=unsloth`. `CLOUD_PORT=8000` is refused. Local users must update `cloud.tunnelUrl`.
 - `/health` can report `"status": "loading"` while the Unsloth model loads; the `route` event's `backend` can be `unsloth`.
 
@@ -36,7 +45,7 @@ Recovery release, now maintained at [cloud-fronts-group/cloud-ai](https://github
 - `src/client.ts` — the SSE parser is now spec-compliant: consecutive `data:` lines of one event are joined with `\n`, comment lines are ignored, and `data:` without a trailing space is accepted. The 0.3.2 parser yielded each `data:` line as a separate event, so a newline inside a streamed token (and therefore any Markdown code fence) could not survive the wire. The backend encodes tokens as multiple `data:` lines, which is also what `sse-starlette` does by default.
 - Source maps are no longer shipped inside the VSIX (`**/*.map` in `.vscodeignore`).
 
-### Known gaps inherited from 0.3.2
+### Known gaps inherited from 0.3.2 (the first is fixed in Unreleased)
 - The README advertises image attachments, and both the client (`imageDataB64`) and backend (`image_data`) carry them, but the chat webview (`media/chat.js`) has no attach control yet, so nothing sends an image today.
 - `web_search` scrapes DuckDuckGo's HTML endpoint and will break whenever its markup changes.
 
